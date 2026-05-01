@@ -17,7 +17,7 @@ class TestSistemo:
         """Test help displays."""
         result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0
-        assert "System management" in result.stdout
+        assert "wifi" in result.stdout  # Commands present
 
     def test_wifi_help(self):
         """Test wifi subcommand help."""

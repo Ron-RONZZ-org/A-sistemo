@@ -9,7 +9,7 @@ packages = [{ include = "A_sistemo", from = "src" }]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<4.0"
-A-core = { path = "../A-core" }
+A-core = { path = "../A-core", develop = true }
 psutil = ">=5.9"
 rich = ">=13"
 
