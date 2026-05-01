@@ -12,9 +12,13 @@ python = ">=3.11,<4.0"
 A-core = { path = "../A-core", develop = true }
 psutil = ">=5.9"
 rich = ">=13"
+typer = ">=0.12"
 
 [tool.poetry.plugins."A.commands"]
 sistemo = "A_sistemo.cli:app"
+
+[tool.poetry.scripts]
+A-sistemo = "A_sistemo.cli:sistemo"
 
 [build-system]
 requires = ["poetry-core"]
@@ -22,7 +26,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8"
-typer = { version = ">=0.12", python = "<4.0" }
 pytest-mock = ">=3.12"
 
 [tool.pytest.ini_options]

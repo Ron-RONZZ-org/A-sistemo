@@ -22,7 +22,7 @@ app.add_typer(disko.app, name="disko")
 app.add_typer(rubo.app, name="rubo")
 
 # Add sistemo-specific subcommands
-app.add_typer(bash_alias.app, name="bash-alias")
+app.add_typer(bash_alias.app, name="sxelo-aliaso")
 app.add_typer(particio.app, name="particio")
 app.command(name="info")(info.info)
 

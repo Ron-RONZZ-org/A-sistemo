@@ -8,13 +8,13 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from A import info, tr
+from A import info, error, tr
 from A_sistemo._shared import CommandError
 from A_sistemo.services import WiFiNetwork, scan_networks, list_connections, connect, disconnect, forget, restart
 
 app = typer.Typer(
     name="wifi",
-    help="Wi-Fi management",
+    help=tr("wifi"),
     no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
@@ -42,9 +42,9 @@ def _show_networks(networks: list[WiFiNetwork]) -> None:
 
 @app.command("ls")
 def ls(
-    name: Optional[str] = typer.Argument(None, help="SSID"),
-    pasvorto: bool = typer.Option(False, "-p", help="Show password"),
-    konservitaj: bool = typer.Option(False, "-k", help="List saved profiles"),
+    name: Optional[str] = typer.Argument(None, help=f"{tr('ssid')} (Example: MyWiFi)"),
+    pasvorto: bool = typer.Option(False, "-p", help=tr("password")),
+    konservitaj: bool = typer.Option(False, "-k", help=tr("konservitaj")),
 ) -> None:
     """List Wi-Fi networks."""
     try:
@@ -54,21 +54,21 @@ def ls(
             networks = scan_networks()
         _show_networks(networks)
     except CommandError as e:
-        info(str(e))
+        error(str(e))
         raise typer.Exit(1)
 
 
 @app.command("konekti")
 def konekti(
-    nomo: str = typer.Argument(..., help="SSID"),
-    pasvorto: Optional[str] = typer.Option(None, "-p", help="Password"),
+    nomo: str = typer.Argument(..., help=f"{tr('ssid')} (Example: MyWiFi)"),
+    pasvorto: Optional[str] = typer.Option(None, "-p", help=tr("password")),
 ) -> None:
     """Connect to Wi-Fi."""
     try:
         connect(nomo, pasvorto)
         info(f"{tr('connected')} '{nomo}'")
     except CommandError as e:
-        info(str(e))
+        error(str(e))
         raise typer.Exit(1)
 
 
@@ -79,18 +79,18 @@ def malkonekti() -> None:
         disconnect()
         info(tr("disconnected"))
     except CommandError as e:
-        info(str(e))
+        error(str(e))
         raise typer.Exit(1)
 
 
 @app.command("forigi")
-def forigi(nomo: str = typer.Argument(..., help="SSID")) -> None:
+def forigi(nomo: str = typer.Argument(..., help=f"{tr('ssid')} (Example: MyWiFi)")) -> None:
     """Delete saved Wi-Fi network."""
     try:
         forget(nomo)
-        info(f"{tr('deleted_alias')}: {nomo}")
+        info(f"{tr('deleted')}: {nomo}")
     except CommandError as e:
-        info(str(e))
+        error(str(e))
         raise typer.Exit(1)
 
 
@@ -101,7 +101,7 @@ def restarti() -> None:
         restart()
         info(tr("status"))
     except CommandError as e:
-        info(str(e))
+        error(str(e))
         raise typer.Exit(1)
 
 

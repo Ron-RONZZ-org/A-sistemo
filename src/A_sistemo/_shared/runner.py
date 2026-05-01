@@ -1,10 +1,11 @@
-"""Unified subprocess runner for A-sistemo."""
+"""Unified subprocess runner for A-sistemo - wraps A.utils.run."""
 
 from __future__ import annotations
 
-import subprocess
 from collections.abc import Sequence
 from typing import Optional
+
+from A.utils import run as _run, SubprocessResult
 
 
 class CommandError(RuntimeError):
@@ -22,29 +23,17 @@ class CommandTimeout(CommandError):
 def run(
     cmd: Sequence[str],
     *,
-    timeout: int = 10,
+    timeout: float = 10.0,
     check: bool = True,
     sudo: bool = False,
     input_text: Optional[str] = None,
-) -> subprocess.CompletedProcess[str]:
+) -> SubprocessResult:
     """Run a subprocess with unified error handling."""
     full_cmd = list(cmd)
     if sudo:
         full_cmd = ["sudo", *full_cmd]
 
-    try:
-        result = subprocess.run(
-            full_cmd,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=timeout,
-            input=input_text,
-        )
-    except FileNotFoundError as exc:
-        raise CommandNotFound(f"Binary not found: {cmd[0]}") from exc
-    except subprocess.TimeoutExpired as exc:
-        raise CommandTimeout(f"Command timed out after {timeout}s") from exc
+    result = _run(*full_cmd, timeout=timeout, input=input_text)
 
     if check and result.returncode != 0:
         raise CommandError(result.stderr.strip() or f"Command failed (rc={result.returncode})")

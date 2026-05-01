@@ -8,12 +8,12 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from A import info
+from A import info, error, tr
 from A_sistemo.services import BashAlias, BashAliasDB
 
 app = typer.Typer(
-    name="bash-alias",
-    help="Bash alias management",
+    name="sxelo-aliaso",
+    help=tr("bash_aliases"),
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
@@ -26,12 +26,12 @@ def _get_db() -> BashAliasDB:
 
 def _show_aliases(aliases: list[BashAlias]) -> None:
     if not aliases:
-        info("Neniuj aliasoj")
+        info(tr("neniu_aliasoj"))
         return
-    table = Table(title="Bash Aliasoj")
+    table = Table(title=tr("bash_aliases"))
     table.add_column("UID", style="cyan")
-    table.add_column("Alias", style="green")
-    table.add_column("Funkcio", style="dim")
+    table.add_column(tr("alias"), style="green")
+    table.add_column(tr("function"), style="dim")
     for a in aliases:
         table.add_row(str(a.uid), a.alias, a.function[:50])
     console.print(table)
@@ -39,8 +39,8 @@ def _show_aliases(aliases: list[BashAlias]) -> None:
 
 @app.command("ls")
 def ls(
-    alfabeto: bool = typer.Option(False, "-al", "--alfabeto", help="Alfabetaordo"),
-    inversigi: bool = typer.Option(False, "-i", "--inversigi", help="Inversaordo"),
+    alfabeto: bool = typer.Option(False, "-A", "--alfabeto", help=tr("alfabetaordo")),
+    inversigi: bool = typer.Option(False, "-i", "--inversigi", help=tr("inversaordo")),
 ) -> None:
     """List bash aliases."""
     db = _get_db()
@@ -51,66 +51,66 @@ def ls(
 
 @app.command("aldoni")
 def aldoni(
-    alias: str = typer.Option(..., "-a", "--alias", help="Alias nomo"),
-    funkcio: str = typer.Option(..., "-f", "--funkcio", help="Funkcio"),
-    notes: str = typer.Option("", "-n", "--notes", help="Notoj"),
+    alias: str = typer.Option(..., "-a", "--alias", help=f"{tr('alias')} (Example: ll)"),
+    funkcio: str = typer.Option(..., "-f", "--funkcio", help=f"{tr('function')} (Example: ls -la)"),
+    notes: str = typer.Option("", "-n", "--notes", help=tr("notes")),
 ) -> None:
     """Add new bash alias."""
     db = _get_db()
     uid = db.add_alias(alias, funkcio, notes or None)
     db.sync_shell_config()
-    info(f"Aldonita: UID {uid}")
+    info(f"{tr('added')}: UID {uid}")
 
 
 @app.command("modifi")
 def modifi(
-    uid: int = typer.Argument(..., help="UID"),
-    alias: Optional[str] = typer.Option(None, "-a", "--alias", help="Nova alias"),
-    funkcio: Optional[str] = typer.Option(None, "-f", "--funkcio", help="Nova funkcio"),
-    notes: Optional[str] = typer.Option(None, "-n", "--notes", help="Notoj"),
+    uid: int = typer.Argument(..., help=f"UID (Example: 1)"),
+    alias: Optional[str] = typer.Option(None, "-a", "--alias", help=f"Nova {tr('alias')}"),
+    funkcio: Optional[str] = typer.Option(None, "-f", "--funkcio", help=f"Nova {tr('function')}"),
+    notes: Optional[str] = typer.Option(None, "-n", "--notes", help=tr("notes")),
 ) -> None:
     """Modify bash alias."""
     db = _get_db()
     if db.update_alias(uid, alias, funkcio, notes):
         db.sync_shell_config()
-        info(f"Modifita: UID {uid}")
+        info(f"{tr('modified')}: UID {uid}")
     else:
-        info(f"Ne trovita: UID {uid}")
+        error(f"{tr('ne_trovita_uid')} {uid}")
         raise typer.Exit(1)
 
 
 @app.command("forigi")
 def forigi(
-    uids: list[int] = typer.Argument(..., help="UIDs"),
-    justa: bool = typer.Option(False, "-j", "--justa", help="Sen konfirmo"),
+    uids: list[int] = typer.Argument(..., help=f"UIDs (Example: 1 2)"),
+    justa: bool = typer.Option(False, "-j", "--justa", help=tr("sen_konfirmo")),
 ) -> None:
     """Delete bash aliases."""
     if not uids:
-        info("最少 unu UID bezonata")
+        error(tr("最少_unu_uid"))
         raise typer.Exit(1)
     db = _get_db()
     for uid in uids:
         db.delete_alias(uid)
     db.sync_shell_config()
-    info(f"Forigitaj: {len(uids)} aliasoj")
+    info(f"{tr('deleted_alias')}: {len(uids)} aliasoj")
 
 
 @app.command("vidi")
-def vidi(uid: int = typer.Argument(..., help="UID")) -> None:
+def vidi(uid: int = typer.Argument(..., help=f"UID (Example: 1)")) -> None:
     """View bash alias details."""
     db = _get_db()
     a = db.get_alias(uid)
     if not a:
-        info(f"Ne trovita: UID {uid}")
+        error(f"{tr('ne_trovita_uid')} {uid}")
         raise typer.Exit(1)
-    info(f"Alias: {a.alias}")
-    info(f"Funkcio: {a.function}")
+    info(f"{tr('alias')}: {a.alias}")
+    info(f"{tr('function')}: {a.function}")
     if a.notes:
-        info(f"Notoj: {a.notes}")
+        info(f"{tr('notes')}: {a.notes}")
 
 
 @app.command("serci")
-def serci(query: str = typer.Argument("", help="Sercha termino")) -> None:
+def serci(query: str = typer.Argument("", help=f"{tr('sercho_termino')} (Example: ll)")) -> None:
     """Search bash aliases."""
     db = _get_db()
     results = db.search_aliases(query)
