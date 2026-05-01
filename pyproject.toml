@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "A-sistemo"
+version = "0.1.0"
+description = "A-sistemo - System management commands (info, wifi, bluhdento, usb, disko, rubo)"
+authors = ["Rong ZHOU <rong.zhou6@etu.univ-lorraine.fr>"]
+readme = "README.md"
+license = "GPL-3.0-only"
+packages = [{ include = "A_sistemo", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<4.0"
+A-core = { path = "../A-core" }
+psutil = ">=5.9"
+rich = ">=13"
+
+[tool.poetry.plugins."A.commands"]
+sistemo = "A_sistemo.cli:app"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8"
+typer = { version = ">=0.12", python = "<4.0" }
+pytest-mock = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

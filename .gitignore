@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+
+# Poetry
+poetry.lock
+
+# Testing
+.pytest_cache/
+
+# OS
+.DS_Store
