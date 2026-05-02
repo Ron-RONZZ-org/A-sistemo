@@ -1,5 +1,9 @@
 # A-sistemo
 
+## Context
+
+For architecture and API reference, see [A-workspace](./workspace/).
+
 A-sistemo - System management commands
 
 ## Install
