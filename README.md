@@ -15,7 +15,11 @@ git submodule update --init --recursive
 **DO NOT edit workspace/ directly** - see [A-workspace](https://github.com/Ron-RONZZ-org/A-workspace) for master context.
 
 
-A-sistemo - System management commands
+## Status
+
+✅ **Working** - Compatible with A-core infrastructure (as of 2026-05-02).
+
+## A-sistemo - System management commands
 
 ## Install
 
@@ -66,3 +70,6 @@ A-sistemo includes multiple subcommands:
 ## License
 
 GPL-3.0-only
+---
+
+**Branch:** Use `main` for all development.
