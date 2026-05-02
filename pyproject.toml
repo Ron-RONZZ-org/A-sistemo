@@ -1,3 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "A-sistemo"
+version = "0.1.0"
+description = "A-sistemo - System management commands (info, wifi, bluhdento, usb, disko, rubo)"
+readme = "README.md"
+license = "GPL-3.0-only"
+authors = [{name = "Rong ZHOU", email = "rong.zhou6@etu.univ-lorraine.fr"}]
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-mock>=3.14.0",
+]
+
+[project.entry-points."A.commands"]
+sistemo = "A_sistemo.cli:app"
+
+[project.scripts]
+A-sistemo = "A_sistemo.cli:sistemo"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/A_sistemo"]
+
+# Poetry kept for local path dependency
 [tool.poetry]
 name = "A-sistemo"
 version = "0.1.0"
@@ -19,10 +48,6 @@ sistemo = "A_sistemo.cli:app"
 
 [tool.poetry.scripts]
 A-sistemo = "A_sistemo.cli:sistemo"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8"
