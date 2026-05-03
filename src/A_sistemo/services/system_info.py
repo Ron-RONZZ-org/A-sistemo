@@ -55,13 +55,22 @@ class SystemInfo:
 
 def collect_system_info() -> SystemInfo:
     """Gather all system information."""
-    # Lazy import - only fail when this function is called
+    # Lazy import - auto-install if missing
     try:
         import psutil
     except ImportError:
-        from A import error
-        error("psutil not installed. Install with: pip install psutil")
-        raise SystemExit(1)
+        from A import info, error, run
+        import sys
+        info("psutil not found. Auto-installing...")
+        result = run(sys.executable, "-m", "pip", "install", "psutil", timeout=60)
+        if result.returncode == 0:
+            import psutil  # type: ignore[import-untyped]
+        else:
+            error(
+                "Failed to auto-install psutil. "
+                f"Install manually: {sys.executable} -m pip install psutil"
+            )
+            raise SystemExit(1)
 
     uname = platform.uname()
     try:
