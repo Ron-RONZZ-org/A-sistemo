@@ -45,7 +45,7 @@ class BashAliasDB:
         # Ensure parent directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
         # Use A's SQLiteDB with schema
-        self._db = SQLiteDB(str(db_path.with_suffix("")), SCHEMA)
+        self._db = SQLiteDB(db_path, SCHEMA)
 
     def _row_to_alias(self, row: dict) -> BashAlias:
         """Convert database row to BashAlias dataclass."""
