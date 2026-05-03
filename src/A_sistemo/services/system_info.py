@@ -61,7 +61,7 @@ def collect_system_info() -> SystemInfo:
     except ImportError:
         from A import error
         error("psutil not installed. Install with: pip install psutil")
-        raise
+        raise SystemExit(1)
 
     uname = platform.uname()
     try:
