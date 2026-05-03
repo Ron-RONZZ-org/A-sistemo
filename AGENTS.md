@@ -51,6 +51,11 @@ poetry run pytest tests/
 - Don't skip i18n (use `tr()`)
 - Don't use `print()` — use `A.utils.output`
 - Don't hardcode command paths — use `shutil.which()` or `A.utils.run`
-## Branch Convention
 
+## Documentation
+
+- **Readthedocs**: https://a-sistemo.readthedocs.io
+- Supports multilingual: English, Esperanto, French
+
+## Branch Convention
 All A-* repos use `main` as the primary branch. Use `main` for all development.

@@ -67,6 +67,10 @@ A-sistemo includes multiple subcommands:
 | sxelo-aliaso | Bash alias management |
 | particio | Partition management |
 
+## Documentation
+
+- **Readthedocs**: https://a-sistemo.readthedocs.io
+
 ## License
 
 GPL-3.0-only
