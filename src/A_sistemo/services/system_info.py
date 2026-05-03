@@ -7,8 +7,6 @@ import socket
 from dataclasses import dataclass
 from typing import Optional
 
-import psutil
-
 from A_sistemo._shared import format_gib, run
 
 
@@ -57,6 +55,14 @@ class SystemInfo:
 
 def collect_system_info() -> SystemInfo:
     """Gather all system information."""
+    # Lazy import - only fail when this function is called
+    try:
+        import psutil
+    except ImportError:
+        from A import error
+        error("psutil not installed. Install with: pip install psutil")
+        raise
+
     uname = platform.uname()
     try:
         os_pretty = platform.freedesktop_os_release().get("PRETTY_NAME", "")
