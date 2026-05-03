@@ -31,6 +31,8 @@ def show_info() -> None:
     lines.append(f"Network  : {sys_info.network.hostname} ({sys_info.network.ip_address})")
     if sys_info.network.active_interfaces:
         lines.append(f"           interfaces up: {', '.join(sys_info.network.active_interfaces)}")
+    if sys_info.network.wifi_ssid:
+        lines.append(f"           wifi: {sys_info.network.wifi_ssid}")
 
     bt = sys_info.bluetooth
     if bt.available:

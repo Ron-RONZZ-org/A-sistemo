@@ -69,7 +69,7 @@ A-sistemo provides system management commands:
 
  ```bash
  A sistemo bluhdento ls        # List Bluetooth devices
- A sistemo bluhdento serchi    # Search for devices
+ A sistemo bluhdento serci    # Search for devices
  ```
 
 ### USB

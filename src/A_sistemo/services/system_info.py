@@ -28,6 +28,7 @@ class NetworkInfo:
     hostname: str
     ip_address: str
     active_interfaces: list[str]
+    wifi_ssid: str | None
 
 
 @dataclass
@@ -112,6 +113,9 @@ def collect_system_info() -> SystemInfo:
     net_if = psutil.net_if_stats()
     active = [iface for iface, stat in net_if.items() if stat.isup and iface != "lo"]
 
+    # Get connected WiFi SSID
+    wifi_ssid = _get_wifi_ssid()
+
     bt_info = _collect_bluetooth_info()
 
     return SystemInfo(
@@ -125,9 +129,29 @@ def collect_system_info() -> SystemInfo:
         ram_total_gib=ram_total,
         storage=storage,
         battery=battery,
-        network=NetworkInfo(hostname=hostname, ip_address=ip_address, active_interfaces=active),
+        network=NetworkInfo(hostname=hostname, ip_address=ip_address, active_interfaces=active, wifi_ssid=wifi_ssid),
         bluetooth=bt_info,
     )
+
+
+def _get_wifi_ssid() -> str | None:
+    """Get the currently connected WiFi SSID, or None if not on WiFi."""
+    try:
+        result = run(["iwgetid", "-r"], timeout=3, check=False)
+        ssid = result.stdout.strip()
+        return ssid if ssid else None
+    except (FileNotFoundError, RuntimeError):
+        pass
+    # Fallback: try nmcli
+    try:
+        result = run(["nmcli", "-t", "-f", "ACTIVE,SSID", "device", "wifi", "list"], timeout=5, check=False)
+        for line in result.stdout.splitlines():
+            parts = line.split(":", 1)
+            if len(parts) == 2 and parts[0] == "yes":
+                return parts[1].strip()
+    except (FileNotFoundError, RuntimeError):
+        pass
+    return None
 
 
 def _collect_bluetooth_info() -> BluetoothInfo:
