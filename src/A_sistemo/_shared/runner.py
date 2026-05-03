@@ -36,7 +36,8 @@ def run(
     result = _run(*full_cmd, timeout=timeout, input=input_text)
 
     if check and result.returncode != 0:
-        raise CommandError(result.stderr.strip() or f"Command failed (rc={result.returncode})")
+        msg = result.stderr.strip() or result.stdout.strip() or f"Command failed (rc={result.returncode})"
+        raise CommandError(msg)
 
     return result
 

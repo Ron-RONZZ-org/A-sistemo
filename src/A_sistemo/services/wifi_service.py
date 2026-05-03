@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from A_sistemo._shared import run
+from A_sistemo._shared import run, CommandError
 
 
 @dataclass
@@ -19,9 +19,14 @@ class WiFiNetwork:
 
 
 def scan_networks() -> list[WiFiNetwork]:
-    """Scan available Wi-Fi networks."""
+    """Scan available Wi-Fi networks.
+
+    Returns scan results merged with the currently active connection
+    (so the connected network always appears even if not visible in scan).
+    """
     result = run(["nmcli", "-t", "-f", "ACTIVE,SSID,SIGNAL,SECURITY", "device", "wifi", "list"])
-    networks = []
+    networks: list[WiFiNetwork] = []
+    seen_ssids: set[str] = set()
     for line in result.stdout.splitlines():
         if not line.strip():
             continue
@@ -31,12 +36,29 @@ def scan_networks() -> list[WiFiNetwork]:
                 signal = int(fields[2]) if fields[2] else None
             except ValueError:
                 signal = None
+            # Rejoin SSID in case it contained ':'
+            ssid = ":".join(fields[1:-2])
             networks.append(WiFiNetwork(
-                name=fields[1],
+                name=ssid,
                 active=fields[0] == "yes",
                 signal=signal,
                 security=fields[3] if fields[3] else None,
             ))
+            seen_ssids.add(ssid)
+
+    # Ensure the active connection appears even if not in scan range
+    try:
+        active = run(
+            ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show", "--active"],
+            check=False,
+        )
+        for line in active.stdout.splitlines():
+            parts = line.split(":", 1)
+            if len(parts) == 2 and parts[1] == "wifi" and parts[0] not in seen_ssids:
+                networks.insert(0, WiFiNetwork(name=parts[0], active=True))
+    except (CommandError, RuntimeError):
+        pass
+
     return networks
 
 
