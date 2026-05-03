@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import typer
-
 from A_sistemo.services import collect_system_info
 from A import info
 
 
-def info() -> None:
+def show_info() -> None:
     """Show system information."""
     sys_info = collect_system_info()
 
@@ -43,4 +41,4 @@ def info() -> None:
     info("\n".join(lines))
 
 
-__all__ = ["info"]
+__all__ = ["show_info"]
