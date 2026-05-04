@@ -21,3 +21,6 @@ poetry.lock
 
 # OS
 .DS_Store
+# Serena (track memories, ignore config/cache)
+.serena/cache/
+.serena/project*.yml
