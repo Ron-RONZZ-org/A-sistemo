@@ -74,9 +74,11 @@ def scan_networks() -> list[WiFiNetwork]:
                 signal = None
             # Rejoin SSID in case it contained ':'
             ssid = ":".join(fields[1:-2])
+            # Handle both English and Esperanto output from nmcli
+            is_active = fields[0] in ("yes", "jes")
             networks.append(WiFiNetwork(
                 name=ssid,
-                active=fields[0] == "yes",
+                active=is_active,
                 signal=signal,
                 security=fields[3] if fields[3] else None,
             ))
@@ -119,9 +121,11 @@ def list_connections(show_secrets: bool = False) -> list[WiFiNetwork]:
             continue
         fields = line.split(":")
         if len(fields) >= 4 and fields[1]:
+            # Handle both English and Esperanto output from nmcli
+            is_active = fields[0] in ("yes", "jes")
             networks.append(WiFiNetwork(
                 name=fields[1],
-                active=fields[0] == "yes",
+                active=is_active,
                 uuid=fields[2],
                 device=fields[3],
             ))
