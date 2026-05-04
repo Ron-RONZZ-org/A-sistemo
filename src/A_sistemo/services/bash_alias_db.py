@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+import sqlite3
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 from A.data.base import SQLiteDB
+
+
+# Legacy autish paths
+_AUTISH_CONFIG_DIR = Path.home() / ".config" / "autish"
+_AUTISH_ALIASES_DB = _AUTISH_CONFIG_DIR / "bash_aliases.db"
+_AUTISH_ALIASES_FILE = Path.home() / ".autish_aliases"
 
 
 @dataclass
@@ -141,4 +148,113 @@ class BashAliasDB:
         pass
 
 
-__all__ = ["BashAlias", "BashAliasDB"]
+def migrate_from_autish(target_db: BashAliasDB) -> dict:
+    """Migrate bash aliases from autish-legacy to A-sistemo.
+    
+    Args:
+        target_db: Target BashAliasDB to migrate into
+        
+    Returns:
+        Dict with migration results
+    """
+    results = {
+        "source": 0,
+        "migrated": 0,
+        "skipped": 0,
+        "errors": [],
+    }
+    
+    # Check if legacy DB exists
+    if not _AUTISH_ALIASES_DB.exists():
+        return results
+    
+    try:
+        legacy = sqlite3.connect(str(_AUTISH_ALIASES_DB))
+        legacy.row_factory = sqlite3.Row
+    except Exception as e:
+        results["errors"].append(f"Could not connect to legacy DB: {e}")
+        return results
+    
+    # Get existing aliases for idempotency
+    existing = {a.alias for a in target_db.list_aliases()}
+    
+    # Migrate aliases
+    rows = legacy.execute("SELECT * FROM bash_aliases").fetchall()
+    results["source"] = len(rows)
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    for row in rows:
+        alias_name = row["alias"]
+        if alias_name in existing:
+            results["skipped"] += 1
+            continue
+        
+        try:
+            target_db.add_alias(
+                alias=alias_name,
+                function=row["function"],
+                notes=row.get("notes"),
+            )
+            results["migrated"] += 1
+            existing.add(alias_name)  # Prevent duplicates in same run
+        except Exception as e:
+            results["errors"].append(f"{alias_name}: {e}")
+    
+    legacy.close()
+    
+    return results
+
+
+def migrate_bashrc(target_db: BashAliasDB) -> dict:
+    """Update ~/.bashrc to source A aliases instead of autish.
+    
+    Returns:
+        Dict with results
+    """
+    results = {
+        "removed_autish": False,
+        "added_A": False,
+        "error": None,
+    }
+    
+    bashrc = Path.home() / ".bashrc"
+    if not bashrc.exists():
+        return results
+    
+    content = bashrc.read_text()
+    lines = content.split("\n")
+    
+    new_lines = []
+    autish_source_found = False
+    A_source_found = False
+    
+    for line in lines:
+        # Remove autish source line
+        if "autish_aliases" in line and "source" in line.lower():
+            autish_source_found = True
+            continue
+        # Skip if already have A source
+        if ".bash_aliases" in line and "A" in line:
+            A_source_found = True
+            continue
+        new_lines.append(line)
+    
+    # Add A source line if not present
+    if not A_source_found:
+        new_lines.append("")
+        new_lines.append("# A bash aliases")
+        new_lines.append("source ~/.bash_aliases")
+        results["added_A"] = True
+    
+    # Write updated bashrc
+    try:
+        bashrc.write_text("\n".join(new_lines) + "\n")
+        results["removed_autish"] = autish_source_found
+    except Exception as e:
+        results["error"] = str(e)
+    
+    return results
+
+
+__all__ = ["BashAlias", "BashAliasDB", "migrate_from_autish", "migrate_bashrc"]
