@@ -47,6 +47,7 @@ def scan_networks() -> list[WiFiNetwork]:
             seen_ssids.add(ssid)
 
     # Ensure the active connection appears even if not in scan range
+    # Issue #6 attempted fix but used profile name instead of actual SSID
     try:
         active = run(
             ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show", "--active"],
@@ -55,7 +56,17 @@ def scan_networks() -> list[WiFiNetwork]:
         for line in active.stdout.splitlines():
             parts = line.split(":", 1)
             if len(parts) == 2 and parts[1] == "wifi" and parts[0] not in seen_ssids:
-                networks.insert(0, WiFiNetwork(name=parts[0], active=True))
+                # Query actual SSID from the profile (not profile name)
+                ssid_result = run(
+                    ["nmcli", "-g", "802-11-wireless.ssid", "connection", "show", parts[0]],
+                    check=False,
+                )
+                actual_ssids = ssid_result.stdout.strip()
+                if actual_ssids:
+                    for ssid in actual_ssids.splitlines():
+                        ssid = ssid.strip()
+                        if ssid and ssid not in seen_ssids:
+                            networks.append(WiFiNetwork(name=ssid, active=True))
     except (CommandError, RuntimeError):
         pass
 
