@@ -12,7 +12,7 @@ from A import info, error, tr
 from A_sistemo.services import BashAlias, BashAliasDB
 
 app = typer.Typer(
-    name="sxelo-aliaso",
+    name="bash-aliaso",
     help=tr("bash_aliases"),
     context_settings={"help_option_names": ["-h", "--help"]},
 )
@@ -115,6 +115,37 @@ def serci(query: str = typer.Argument("", help=f"{tr('sercho_termino')} (Example
     db = _get_db()
     results = db.search_aliases(query)
     _show_aliases(results)
+
+
+@app.command("migri")
+def migri() -> None:
+    """Migrate bash aliases from autish-legacy to A."""
+    from A import success, info, error
+    from A_sistemo.services.bash_alias_db import migrate_from_autish, migrate_bashrc
+    
+    # Migrate aliases to A DB
+    db = _get_db()
+    result = migrate_from_autish(db)
+    
+    if result["source"] == 0:
+        info("Neniuj bash aliasoj en autish-legacy.")
+        return
+    
+    success(f"Migrateblaj: {result['source']}, migrantitaj: {result['migrated']}, ignoritaj: {result['skipped']}")
+    
+    # Update bashrc
+    bashrc_result = migrate_bashrc(db)
+    if bashrc_result["error"]:
+        error(f"bashrc eraro: {bashrc_result['error']}")
+    else:
+        if bashrc_result["removed_autish"]:
+            info("removed autish referencoj el ~/.bashrc")
+        if bashrc_result["added_A"]:
+            info("added A referencoj al ~/.bashrc")
+    
+    # Sync the aliases file
+    db.sync_shell_config()
+    info("bash aliasoj sinkronigitaj")
 
 
 __all__ = ["app"]
