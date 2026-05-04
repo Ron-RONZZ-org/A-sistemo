@@ -8,7 +8,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from A import info, error, tr
+from A import info, error, tr, tr_multi
 from A_sistemo._shared import CommandError
 from A_sistemo.services import WiFiNetwork, scan_networks, list_connections, connect, disconnect, forget, restart
 
@@ -30,12 +30,16 @@ def _show_networks(networks: list[WiFiNetwork]) -> None:
     table.add_column(tr("signal"), style="dim")
     table.add_column(tr("security"), style="dim")
     table.add_column(tr("status"), style="cyan")
+    table.add_column(
+        tr_multi("AP-oj", "APs", "PA"), style="dim"
+    )
     for net in networks:
         table.add_row(
             net.name,
             f"{net.signal}%" if net.signal is not None else "-",
             net.security or "-",
             tr("connected") if net.active else "",
+            str(net.ap_count),
         )
     console.print(table)
 

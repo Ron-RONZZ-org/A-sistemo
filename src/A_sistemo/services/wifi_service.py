@@ -16,6 +16,42 @@ class WiFiNetwork:
     security: Optional[str] = None
     device: Optional[str] = None
     uuid: Optional[str] = None
+    ap_count: int = 1
+
+
+def _deduplicate_networks(networks: list[WiFiNetwork]) -> list[WiFiNetwork]:
+    """Deduplicate networks by SSID, keeping the entry with highest signal.
+
+    For each SSID, only the entry with the strongest signal is kept.
+    The active flag is OR'd across all duplicate entries for the same SSID.
+    The ``ap_count`` field records how many access points (BSSIDs) were
+    found for that SSID.
+    Entries with an empty SSID (hidden networks) pass through unchanged.
+    """
+    empty_ssid = [n for n in networks if not n.name]
+
+    best: dict[str, WiFiNetwork] = {}
+    counts: dict[str, int] = {}
+    for n in networks:
+        if not n.name:
+            continue
+        counts[n.name] = counts.get(n.name, 0) + 1
+        if n.name not in best:
+            best[n.name] = n
+        else:
+            cur = best[n.name]
+            # Higher signal wins
+            if (n.signal or 0) > (cur.signal or 0):
+                best[n.name] = n
+            elif (n.signal or 0) == (cur.signal or 0) and n.active and not cur.active:
+                best[n.name] = n
+            # Propagate active flag across duplicates
+            best[n.name].active = best[n.name].active or cur.active
+
+    for name, net in best.items():
+        net.ap_count = counts[name]
+
+    return list(best.values()) + empty_ssid
 
 
 def scan_networks() -> list[WiFiNetwork]:
@@ -70,7 +106,7 @@ def scan_networks() -> list[WiFiNetwork]:
     except (CommandError, RuntimeError):
         pass
 
-    return networks
+    return _deduplicate_networks(networks)
 
 
 def list_connections(show_secrets: bool = False) -> list[WiFiNetwork]:
