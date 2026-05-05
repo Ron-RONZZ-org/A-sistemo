@@ -9,6 +9,10 @@ build:
     python: "3.11"
   apt_packages:
     - groff  # For man pages
+  jobs:
+    post_install:
+      - pip install uv
+      - uv pip install --system -e ".[docs]"
 
 python:
   install:

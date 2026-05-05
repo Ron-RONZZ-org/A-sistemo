@@ -24,6 +24,10 @@ git submodule update --init --recursive
 ## Install
 
 ```bash
+# Recommended — fast, reliable
+pip install uv && uv pip install A-sistemo
+
+# Traditional
 pip install A-sistemo
 ```
 
