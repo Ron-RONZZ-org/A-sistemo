@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Annotated, Optional
 
 import typer
 from rich.console import Console
@@ -88,14 +88,14 @@ def malkonekti() -> None:
 
 
 @app.command("forigi")
-def forigi(nomo: str = typer.Argument(..., help=f"{tr('ssid')} (Example: MyWiFi)")) -> None:
-    """Delete saved Wi-Fi network."""
-    try:
-        forget(nomo)
-        info(f"{tr('deleted')}: {nomo}")
-    except CommandError as e:
-        error(str(e))
-        raise typer.Exit(1)
+def forigi(nomoj: Annotated[list[str], typer.Argument(..., help=f"{tr('ssid')} (Example: MyWiFi, multiple)")]) -> None:
+    """Delete saved Wi-Fi networks."""
+    for nomo in nomoj:
+        try:
+            forget(nomo)
+            info(f"{tr('deleted')}: {nomo}")
+        except CommandError as e:
+            error(str(e))
 
 
 @app.command("restarti")
