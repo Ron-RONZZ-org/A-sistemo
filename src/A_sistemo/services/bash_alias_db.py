@@ -191,21 +191,22 @@ def migrate_from_autish(target_db: BashAliasDB) -> dict:
     now = datetime.now(timezone.utc).isoformat()
     
     for row in rows:
-        alias_name = row["alias"]
-        if alias_name in existing:
-            results["skipped"] += 1
-            continue
-        
-        try:
-            target_db.add_alias(
-                alias=alias_name,
-                function=row["function"],
-                notes=row.get("notes"),
-            )
-            results["migrated"] += 1
-            existing.add(alias_name)  # Prevent duplicates in same run
-        except Exception as e:
-            results["errors"].append(f"{alias_name}: {e}")
+                alias_name = row["alias"]
+                if alias_name in existing:
+                    results["skipped"] += 1
+                    continue
+                
+                try:
+                    notes_val = row["notes"] if row["notes"] else None
+                    target_db.add_alias(
+                        alias=alias_name,
+                        function=row["function"],
+                        notes=notes_val,
+                    )
+                    results["migrated"] += 1
+                    existing.add(alias_name)  # Prevent duplicates in same run
+                except Exception as e:
+                    results["errors"].append(f"{alias_name}: {e}")
     
     legacy.close()
     

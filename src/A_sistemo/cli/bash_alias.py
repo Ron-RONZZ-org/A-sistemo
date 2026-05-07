@@ -133,6 +133,11 @@ def migri() -> None:
     
     success(f"Migrateblaj: {result['source']}, migrantitaj: {result['migrated']}, ignoritaj: {result['skipped']}")
     
+    # Report errors
+    for err in result.get("errors", []):
+        from A import warning
+        warning(f"  {err}")
+    
     # Update bashrc
     bashrc_result = migrate_bashrc(db)
     if bashrc_result["error"]:
