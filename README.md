@@ -68,7 +68,7 @@ A-sistemo includes multiple subcommands:
 | usb | USB device listing |
 | disko | Disk device listing |
 | rubo | Trash management |
-| sxelo-aliaso | Bash alias management |
+| selo-aliaso | Bash alias management |
 | particio | Partition management |
 
 ## Documentation

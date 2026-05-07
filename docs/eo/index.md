@@ -41,7 +41,7 @@ A-sistemo provizas sistemadministrada komandojn:
 | `disko` | Diskaj aparatoj |
 | `particio` | Particia mastrumado |
 | `rubo` | Rubujo mastrumado |
-| `sxelo-aliaso` | Bash aliazaj mastrumado |
+| `selo-aliaso` | Bash aliazaj mastrumado |
 
 ### Sistemaj Informoj
 
@@ -90,7 +90,7 @@ A-sistemo provizas sistemadministrada komandojn:
 ### Bash Aliazoj
 
  ```bash
- A sistemo sxelo-aliaso ls        # Listigi aliazon
+ A sistemo selo-aliaso ls        # Listigi aliazon
  ```
 
 ---

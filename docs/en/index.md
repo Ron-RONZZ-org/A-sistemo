@@ -47,7 +47,7 @@ A-sistemo provides system management commands:
 | `disko` | Disk devices |
 | `particio` | Partition management |
 | `rubo` | Trash management |
-| `sxelo-aliaso` | Bash alias management |
+| `selo-aliaso` | Bash alias management |
 
 ### System Info
 
@@ -104,9 +104,9 @@ A-sistemo provides system management commands:
 ### Bash Aliases
 
  ```bash
- A sistemo sxelo-aliaso ls        # List aliases
- A sistemo sxelo-aliaso aldoni   # Add alias
- A sistemo sxelo-aliaso forigi    # Remove alias
+ A sistemo selo-aliaso ls        # List aliases
+ A sistemo selo-aliaso aldoni   # Add alias
+ A sistemo selo-aliaso forigi    # Remove alias
  ```
 
 ---
