@@ -251,7 +251,7 @@ def migrate_from_autish(target_db: BashAliasDB) -> dict:
             if changed:
                 target_db.update_alias(
                     uid=existing_alias.uid,
-                    funkcio=new_function,
+                    function=new_function,
                 )
                 results["migrated"] += 1
             else:
