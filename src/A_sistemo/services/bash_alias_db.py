@@ -145,9 +145,10 @@ class BashAliasDB:
             output.append(f'alias {a.alias}="{a.function}"')
         
         config = Path.home() / ".A_bash_alias"
-        config.write_text("\n".join(output) + "\n")
         if config.exists():
-            config.chmod(0o444)  # Read-only to prevent user edits
+            config.chmod(0o644)  # Make writable before overwriting
+        config.write_text("\n".join(output) + "\n")
+        config.chmod(0o444)  # Read-only to prevent user edits
 
     def close(self) -> None:
         """Close database connection (no-op for SQLiteDB)."""
