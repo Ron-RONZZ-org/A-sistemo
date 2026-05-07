@@ -41,7 +41,7 @@ A-sistemo fournit des commandes de gestion système:
 | `disko` | Appareils disque |
 | `particio` | Gestion des partitions |
 | `rubo` | Gestion de la corbeille |
-| `sxelo-aliaso` | Gestion des alias Bash |
+| `selo-aliaso` | Gestion des alias Bash |
 
 ### Informations Système
 
@@ -90,7 +90,7 @@ A sistemo ruboelton       # Vider la corbeille
 ### Alias Bash
 
 ```bash
-A sistemo sxelo-aliaso ls        # Liste les alias
+A sistemo selo-aliaso ls        # Liste les alias
 ```
 
 ---
