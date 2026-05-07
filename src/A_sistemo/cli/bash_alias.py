@@ -128,18 +128,13 @@ def migri() -> None:
     db = _get_db()
     result = migrate_from_autish(db)
     
-    if result["source"] == 0:
-        info("Neniuj bash aliasoj en autish-legacy.")
-        return
+    if result["source"] > 0:
+        success(f"Migrateblaj: {result['source']}, migrantitaj: {result['migrated']}, ignoritaj: {result['skipped']}")
+        for err in result.get("errors", []):
+            from A import warning
+            warning(f"  {err}")
     
-    success(f"Migrateblaj: {result['source']}, migrantitaj: {result['migrated']}, ignoritaj: {result['skipped']}")
-    
-    # Report errors
-    for err in result.get("errors", []):
-        from A import warning
-        warning(f"  {err}")
-    
-    # Update bashrc
+    # Always update bashrc (add source line even if no aliases)
     bashrc_result = migrate_bashrc(db)
     if bashrc_result["error"]:
         error(f"bashrc eraro: {bashrc_result['error']}")
