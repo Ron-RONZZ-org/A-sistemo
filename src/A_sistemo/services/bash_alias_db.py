@@ -157,6 +157,7 @@ class BashAliasDB:
 
 # Autish → A command mapping for rewriting alias function bodies
 _AUTISH_TO_A: dict[str, str] = {
+    "autish": "A",
     "encik": "A encik",
     "vorto": "A vorto",
     "kalendaro": "A kalendaro",
@@ -167,6 +168,22 @@ _AUTISH_TO_A: dict[str, str] = {
     "todo": "A todo",
     "taglibro": "A taglibro",
 }
+
+
+def _has_autish_command(body: str) -> bool:
+    """Check if an alias function body contains autish-legacy commands.
+    
+    Args:
+        body: Alias function string
+        
+    Returns:
+        True if any autish command is referenced
+    """
+    import re
+    for autish_cmd in _AUTISH_TO_A:
+        if re.search(rf'(^|[|;])\s*{autish_cmd}\b', body):
+            return True
+    return False
 
 
 def _rewrite_autish_function(body: str) -> str:
@@ -182,7 +199,11 @@ def _rewrite_autish_function(body: str) -> str:
     """
     import re
     for autish_cmd, a_cmd in _AUTISH_TO_A.items():
-        body = re.sub(rf'(^|[|;])\s*{autish_cmd}\b', rf'\1{a_cmd}', body)
+        body = re.sub(
+            rf'(^|[|;])(\s*){autish_cmd}\b',
+            rf'\1\2{a_cmd}',
+            body,
+        )
     return body
 
 
@@ -214,32 +235,39 @@ def migrate_from_autish(target_db: BashAliasDB) -> dict:
         return results
     
     # Get existing aliases for idempotency
-    existing = {a.alias for a in target_db.list_aliases()}
-    
-    # Migrate aliases
+    existing_map = {a.alias: a for a in target_db.list_aliases()}
     rows = legacy.execute("SELECT * FROM bash_aliases").fetchall()
     results["source"] = len(rows)
     
-    now = datetime.now(timezone.utc).isoformat()
-    
     for row in rows:
-                alias_name = row["alias"]
-                if alias_name in existing:
-                    results["skipped"] += 1
-                    continue
-                
-                try:
-                    notes_val = row["notes"] if row["notes"] else None
-                    function = _rewrite_autish_function(row["function"])
-                    target_db.add_alias(
-                        alias=alias_name,
-                        function=function,
-                        notes=notes_val,
-                    )
-                    results["migrated"] += 1
-                    existing.add(alias_name)
-                except Exception as e:
-                    results["errors"].append(f"{alias_name}: {e}")
+        alias_name = row["alias"]
+        old_function = row["function"]
+        new_function = _rewrite_autish_function(old_function)
+        changed = new_function != old_function
+        
+        if alias_name in existing_map:
+            existing_alias = existing_map[alias_name]
+            # Update if function body changed (autish → A rewrite)
+            if changed:
+                target_db.update_alias(
+                    uid=existing_alias.uid,
+                    funkcio=new_function,
+                )
+                results["migrated"] += 1
+            else:
+                results["skipped"] += 1
+            continue
+        
+        try:
+            notes_val = row["notes"] if row["notes"] else None
+            target_db.add_alias(
+                alias=alias_name,
+                function=new_function,
+                notes=notes_val,
+            )
+            results["migrated"] += 1
+        except Exception as e:
+            results["errors"].append(f"{alias_name}: {e}")
     
     legacy.close()
     
