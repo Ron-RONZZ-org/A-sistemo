@@ -26,6 +26,10 @@ app.add_typer(bash_alias.app, name="selo-aliaso")
 app.add_typer(particio.app, name="particio")
 app.command(name="info")(info.show_info)
 
+# Install/uninstall A module wrappers
+app.command(name="instali")(bash_alias.instali)
+app.command(name="malinstali")(bash_alias.malinstali)
+
 
 @app.callback(invoke_without_command=True)
 def sistemo_callback(ctx: typer.Context) -> None:

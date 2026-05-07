@@ -155,6 +155,37 @@ class BashAliasDB:
         pass
 
 
+# Autish → A command mapping for rewriting alias function bodies
+_AUTISH_TO_A: dict[str, str] = {
+    "encik": "A encik",
+    "vorto": "A vorto",
+    "kalendaro": "A kalendaro",
+    "tempo": "A tempo",
+    "sistemo": "A sistemo",
+    "retposto": "A lien retposto",
+    "kontakto": "A lien kontakto",
+    "todo": "A todo",
+    "taglibro": "A taglibro",
+}
+
+
+def _rewrite_autish_function(body: str) -> str:
+    """Rewrite autish commands embedded in an alias function body.
+
+    E.g. 'encik serci "query"' → 'A encik serci "query"'
+
+    Args:
+        body: Alias function string
+
+    Returns:
+        Rewritten function string
+    """
+    import re
+    for autish_cmd, a_cmd in _AUTISH_TO_A.items():
+        body = re.sub(rf'(^|[|;])\s*{autish_cmd}\b', rf'\1{a_cmd}', body)
+    return body
+
+
 def migrate_from_autish(target_db: BashAliasDB) -> dict:
     """Migrate bash aliases from autish-legacy to A-sistemo.
     
@@ -199,13 +230,14 @@ def migrate_from_autish(target_db: BashAliasDB) -> dict:
                 
                 try:
                     notes_val = row["notes"] if row["notes"] else None
+                    function = _rewrite_autish_function(row["function"])
                     target_db.add_alias(
                         alias=alias_name,
-                        function=row["function"],
+                        function=function,
                         notes=notes_val,
                     )
                     results["migrated"] += 1
-                    existing.add(alias_name)  # Prevent duplicates in same run
+                    existing.add(alias_name)
                 except Exception as e:
                     results["errors"].append(f"{alias_name}: {e}")
     
