@@ -26,7 +26,7 @@ def _show_devices(devices: list[USBDevice]) -> None:
     table = Table(title=tr("usb_aparoj"))
     table.add_column(tr("bus"), style="cyan")
     table.add_column(tr("device"), style="cyan")
-    table.add_column(tr("vendor"), style="dim")
+    table.add_column(tr("vendor"))
     table.add_column(tr("nomo"), style="green")
     for dev in devices:
         table.add_row(dev.bus, dev.device, f"{dev.vid}:{dev.pid}", dev.name)

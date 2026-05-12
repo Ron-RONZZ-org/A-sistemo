@@ -25,7 +25,7 @@ def _show_items(items: list[TrashItem]) -> None:
     table = Table(title=tr("trash"))
     table.add_column(tr("nomo"), style="green")
     table.add_column(tr("size"), justify="right")
-    table.add_column(tr("deleted"), style="dim")
+    table.add_column(tr("deleted"))
     for item in items:
         table.add_row(item.name, item.size, item.deleted_at[:19])
     console.print(table)

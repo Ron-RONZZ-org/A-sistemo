@@ -28,7 +28,7 @@ def _show_devices(devices: list[BluetoothDevice]) -> None:
     table = Table(title=tr("bluetooth_devices"))
     table.add_column(tr("mac"), style="cyan")
     table.add_column(tr("nomo"), style="green")
-    table.add_column(tr("statuso"), style="dim")
+    table.add_column(tr("statuso"))
     for dev in devices:
         table.add_row(dev.mac, dev.name, tr("connected") if dev.connected else "")
     console.print(table)

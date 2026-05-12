@@ -27,11 +27,11 @@ def _show_networks(networks: list[WiFiNetwork]) -> None:
         return
     table = Table(title=tr("wifi_networks"))
     table.add_column(tr("ssid"), style="green")
-    table.add_column(tr("signal"), style="dim")
-    table.add_column(tr("security"), style="dim")
+    table.add_column(tr("signal"))
+    table.add_column(tr("security"))
     table.add_column(tr("status"), style="cyan")
     table.add_column(
-        tr_multi("AP-oj", "APs", "PA"), style="dim"
+        tr_multi("AP-oj", "APs", "PA")
     )
     for net in networks:
         table.add_row(

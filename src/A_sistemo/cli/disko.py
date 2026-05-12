@@ -29,8 +29,8 @@ def _show_disks(devices: list[DiskDevice]) -> None:
         return
     table = Table(title=tr("disks"))
     table.add_column(tr("nomo"), style="yellow")
-    table.add_column(tr("type"), style="dim")
-    table.add_column(tr("loko"), style="dim")
+    table.add_column(tr("type"))
+    table.add_column(tr("loko"))
     table.add_column(tr("size"), justify="right")
     for dev in devices:
         table.add_row(dev.name, dev.type, dev.mountpoint, dev.size)
