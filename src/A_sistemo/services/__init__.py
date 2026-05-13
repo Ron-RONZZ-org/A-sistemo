@@ -2,8 +2,10 @@
 
 from A_sistemo.services.system_info import SystemInfo, collect_system_info
 from A_sistemo.services.wifi_service import WiFiNetwork, scan_networks, list_connections, connect, disconnect, forget, restart
-from A_sistemo.services.bluetooth_service import BluetoothDevice, list_paired, connect, disconnect, get_info, is_powered, power_on
-from A_sistemo.services.usb_service import USBDevice, list_devices, bind, unbind
+from A_sistemo.services.bluetooth_service import BluetoothDevice, list_paired, get_info, is_powered, power_on
+from A_sistemo.services.bluetooth_service import connect as bt_connect, disconnect as bt_disconnect
+from A_sistemo.services.usb_service import USBDevice, bind, unbind
+from A_sistemo.services.usb_service import list_devices as usb_list_devices
 from A_sistemo.services.disk_service import DiskDevice, SMARTInfo, list_devices, get_smart_info, mount, unmount
 from A_sistemo.services.recycle_bin import TrashItem, list_items, move_to_trash, restore, delete_permanent
 from A_sistemo.services.bash_alias_db import BashAlias, BashAliasDB
@@ -22,15 +24,18 @@ __all__ = [
     "restart",
     "BluetoothDevice",
     "list_paired",
+    "bt_connect",
+    "bt_disconnect",
     "get_info",
     "is_powered",
     "power_on",
     "USBDevice",
-    "list_devices",
+    "usb_list_devices",
     "bind",
     "unbind",
     "DiskDevice",
     "SMARTInfo",
+    "list_devices",
     "get_smart_info",
     "mount",
     "unmount",

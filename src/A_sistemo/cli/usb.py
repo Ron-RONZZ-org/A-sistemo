@@ -8,7 +8,7 @@ from rich.table import Table
 
 from A import info, error, tr
 from A_sistemo._shared import CommandError
-from A_sistemo.services import USBDevice, list_devices, bind, unbind
+from A_sistemo.services import USBDevice, usb_list_devices, bind, unbind
 
 app = typer.Typer(
     name="usb",
@@ -37,7 +37,7 @@ def _show_devices(devices: list[USBDevice]) -> None:
 def ls() -> None:
     """List USB devices."""
     try:
-        devices = list_devices()
+        devices = usb_list_devices()
         _show_devices(devices)
     except CommandError as e:
         error(str(e))

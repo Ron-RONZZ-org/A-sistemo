@@ -10,7 +10,7 @@ from rich.table import Table
 
 from A import info, error, tr
 from A_sistemo._shared import CommandError
-from A_sistemo.services import BluetoothDevice, list_paired, connect, disconnect, get_info
+from A_sistemo.services import BluetoothDevice, list_paired, bt_connect, bt_disconnect, get_info
 
 app = typer.Typer(
     name="bluhdento",
@@ -53,7 +53,7 @@ def ls(mac: Optional[str] = typer.Argument(None, help=tr("mac"))) -> None:
 def konekti(mac: str = typer.Argument(..., help=f"{tr('mac')} (Example: AA:BB:CC:DD:EE:FF)")) -> None:
     """Connect to Bluetooth device."""
     try:
-        connect(mac)
+        bt_connect(mac)
         info(f"{tr('konektita_al')} {mac}")
     except CommandError as e:
         error(str(e))
@@ -64,7 +64,7 @@ def konekti(mac: str = typer.Argument(..., help=f"{tr('mac')} (Example: AA:BB:CC
 def malkonekti(mac: Optional[str] = typer.Argument(None, help=f"{tr('mac')} (Example: AA:BB:CC:DD:EE:FF)")) -> None:
     """Disconnect Bluetooth device."""
     try:
-        disconnect(mac)
+        bt_disconnect(mac)
         info(tr("disconnected"))
     except CommandError as e:
         error(str(e))
