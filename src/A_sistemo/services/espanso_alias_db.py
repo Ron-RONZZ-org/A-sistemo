@@ -16,8 +16,10 @@ from A.data.base import SQLiteDB
 
 
 # Espanso match directory
-_ESPANSO_MATCH_DIR = Path.home() / ".config" / "espanso" / "match"
+_ESPANSO_CONFIG_DIR = Path.home() / ".config" / "espanso"
+_ESPANSO_MATCH_DIR = _ESPANSO_CONFIG_DIR / "match"
 _A_ESPANSO_FILE = _ESPANSO_MATCH_DIR / "A_espanso.yml"
+_ESPANSO_BAK_DIR = _ESPANSO_CONFIG_DIR / "match-bak"
 
 
 @dataclass
@@ -232,7 +234,7 @@ def backup_old_match_files() -> int:
     Creates match-bak/ directory if needed. Skips A_espanso.yml.
     Returns count of files moved.
     """
-    bak_dir = _ESPANSO_MATCH_DIR / "match-bak"
+    bak_dir = _ESPANSO_BAK_DIR
     bak_dir.mkdir(parents=True, exist_ok=True)
     moved = 0
     for yml_path in sorted(_ESPANSO_MATCH_DIR.glob("*.yml")):
