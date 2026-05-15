@@ -7,6 +7,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 from rich.table import Table
+from rich.box import SIMPLE as BOX_SIMPLE
 
 from A import info, error, tr
 from A_sistemo._shared import CommandError
@@ -25,7 +26,7 @@ def _show_devices(devices: list[BluetoothDevice]) -> None:
     if not devices:
         info(tr("pareigitaj_aparoj"))
         return
-    table = Table(title=tr("bluetooth_devices"))
+    table = Table(box=BOX_SIMPLE, title=tr("bluetooth_devices"))
     table.add_column(tr("mac"), style="cyan")
     table.add_column(tr("nomo"), style="green")
     table.add_column(tr("statuso"))

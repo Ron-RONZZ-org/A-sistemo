@@ -8,6 +8,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 from rich.table import Table
+from rich.box import SIMPLE as BOX_SIMPLE
 
 from A import info, error, tr
 from A_sistemo.services import BashAlias, BashAliasDB
@@ -29,7 +30,7 @@ def _show_aliases(aliases: list[BashAlias]) -> None:
     if not aliases:
         info(tr("neniu_aliasoj"))
         return
-    table = Table(title=tr("bash_aliases"))
+    table = Table(box=BOX_SIMPLE, title=tr("bash_aliases"))
     table.add_column("UID", style="cyan")
     table.add_column(tr("alias"), style="green")
     table.add_column(tr("function"))

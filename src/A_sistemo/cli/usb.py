@@ -5,6 +5,7 @@ from __future__ import annotations
 import typer
 from rich.console import Console
 from rich.table import Table
+from rich.box import SIMPLE as BOX_SIMPLE
 
 from A import info, error, tr
 from A_sistemo._shared import CommandError
@@ -23,7 +24,7 @@ def _show_devices(devices: list[USBDevice]) -> None:
     if not devices:
         info(tr("neniu_usb"))
         return
-    table = Table(title=tr("usb_aparoj"))
+    table = Table(box=BOX_SIMPLE, title=tr("usb_aparoj"))
     table.add_column(tr("bus"), style="cyan")
     table.add_column(tr("device"), style="cyan")
     table.add_column(tr("vendor"))

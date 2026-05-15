@@ -5,6 +5,7 @@ from __future__ import annotations
 import typer
 from rich.console import Console
 from rich.table import Table
+from rich.box import SIMPLE as BOX_SIMPLE
 
 from A import info, error, tr
 from A_sistemo._shared import CommandError
@@ -27,7 +28,7 @@ def _show_disks(devices: list[DiskDevice]) -> None:
     if not devices:
         info(tr("neniu_diskoj"))
         return
-    table = Table(title=tr("disks"))
+    table = Table(box=BOX_SIMPLE, title=tr("disks"))
     table.add_column(tr("nomo"), style="yellow")
     table.add_column(tr("type"))
     table.add_column(tr("loko"))

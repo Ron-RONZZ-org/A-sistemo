@@ -7,6 +7,7 @@ from typing import Annotated, Optional
 import typer
 from rich.console import Console
 from rich.table import Table
+from rich.box import SIMPLE as BOX_SIMPLE
 
 from A import info, error, tr, tr_multi
 from A_sistemo._shared import CommandError
@@ -25,7 +26,7 @@ def _show_networks(networks: list[WiFiNetwork]) -> None:
     if not networks:
         info(tr("neniuj"))
         return
-    table = Table(title=tr("wifi_networks"))
+    table = Table(box=BOX_SIMPLE, title=tr("wifi_networks"))
     table.add_column(tr("ssid"), style="green")
     table.add_column(tr("signal"))
     table.add_column(tr("security"))

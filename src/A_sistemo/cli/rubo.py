@@ -5,6 +5,7 @@ from __future__ import annotations
 import typer
 from rich.console import Console
 from rich.table import Table
+from rich.box import SIMPLE as BOX_SIMPLE
 
 from A import info, error, tr
 from A_sistemo.services import TrashItem, list_items, move_to_trash, restore, delete_permanent
@@ -22,7 +23,7 @@ def _show_items(items: list[TrashItem]) -> None:
     if not items:
         info(tr("trash_empty"))
         return
-    table = Table(title=tr("trash"))
+    table = Table(box=BOX_SIMPLE, title=tr("trash"))
     table.add_column(tr("nomo"), style="green")
     table.add_column(tr("size"), justify="right")
     table.add_column(tr("deleted"))
