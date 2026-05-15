@@ -188,6 +188,43 @@ def migrate_from_existing(target_db: EspansoMatchDB) -> dict:
     if not _ESPANSO_MATCH_DIR.exists():
         return results
 
+    # Get existing triggers for idempotency
+    existing = {m.trigger for m in target_db.list_matches()}
+
+    for yml_path in sorted(_ESPANSO_MATCH_DIR.glob("*.yml")):
+        # Skip our own generated file
+        if yml_path.name == "A_espanso.yml":
+            continue
+
+        results["files_found"] += 1
+
+        # Simple YAML parser for espanso match format.
+        # We parse line-by-line instead of using yaml lib to avoid a dependency.
+        matches = _parse_espanso_yml(yml_path)
+        results["matches_found"] += len(matches)
+
+        seen_in_file: set[str] = set()
+        for trigger, replace_text in matches:
+            # Skip duplicates found in the same file
+            if trigger in seen_in_file:
+                results["skipped"] += 1
+                continue
+            seen_in_file.add(trigger)
+
+            # Skip duplicates already in DB
+            if trigger in existing:
+                results["skipped"] += 1
+                continue
+
+            try:
+                target_db.add_match(trigger=trigger, replace_text=replace_text)
+                results["migrated"] += 1
+                existing.add(trigger)
+            except Exception as e:
+                results["errors"].append(f"{trigger} ({yml_path.name}): {e}")
+
+    return results
+
 
 def backup_old_match_files() -> int:
     """Move old espanso match files to match-bak/ to avoid duplicate expansions.
