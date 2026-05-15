@@ -16,6 +16,7 @@ from A_sistemo.services import EspansoMatch, EspansoMatchDB
 app = typer.Typer(
     name="espanso",
     help=tr("espanso_matches"),
+    no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()

@@ -10,7 +10,8 @@ from A_sistemo.services import shrink, create, format
 
 app = typer.Typer(
     name="particio",
-    help=tr("partition"),
+    help=tr("particia_administrado"),
+    no_args_is_help=True,
 )
 
 

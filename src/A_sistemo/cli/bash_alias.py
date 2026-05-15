@@ -16,6 +16,7 @@ from A_sistemo.services import BashAlias, BashAliasDB
 app = typer.Typer(
     name="bash-aliaso",
     help=tr("bash_aliases"),
+    no_args_is_help=True,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
