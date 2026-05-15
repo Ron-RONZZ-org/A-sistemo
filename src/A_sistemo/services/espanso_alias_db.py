@@ -147,11 +147,11 @@ class EspansoMatchDB:
         matches = self.list_matches()
         lines = ["matches:"]
         for m in matches:
-            trigger_val = m.trigger
-            replace_val = m.replace_text
-            # Use single quotes for clean YAML quoting
-            lines.append(f'- trigger: \'{trigger_val}\'')
-            lines.append(f"  replace: '{replace_val}'")
+            # Escape single quotes for YAML single-quoted strings (double them)
+            safe_trigger = m.trigger.replace("'", "''")
+            safe_replace = m.replace_text.replace("'", "''")
+            lines.append(f"- trigger: '{safe_trigger}'")
+            lines.append(f"  replace: '{safe_replace}'")
 
         # Ensure espanso match directory exists
         _ESPANSO_MATCH_DIR.mkdir(parents=True, exist_ok=True)
