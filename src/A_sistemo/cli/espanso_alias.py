@@ -32,8 +32,8 @@ def _show_matches(matches: list[EspansoMatch]) -> None:
         info(tr("neniu_matches"))
         return
     table = Table(box=BOX_SIMPLE, title=tr("espanso_matches"))
-    table.add_column("UID", style="cyan")
-    table.add_column(tr("trigger"), style="green")
+    table.add_column("UID", style="bold")
+    table.add_column(tr("trigger"))
     table.add_column(tr("replace"))
     for m in matches:
         table.add_row(str(m.uid), m.trigger, m.replace_text[:60])
@@ -123,8 +123,11 @@ def serci(query: str = typer.Argument("", help=tr("sercho_termino"))) -> None:
 @app.command("migri")
 def migri() -> None:
     """Import existing espanso matches from config files."""
-    from A import success
-    from A_sistemo.services.espanso_alias_db import migrate_from_existing
+    from A import success, confirm_action
+    from A_sistemo.services.espanso_alias_db import (
+        migrate_from_existing,
+        backup_old_match_files,
+    )
 
     db = _get_db()
     result = migrate_from_existing(db)
@@ -142,7 +145,15 @@ def migri() -> None:
 
     if result["migrated"] > 0:
         db.sync_espanso_config()
-        info("Espanso config synced.")
+        info("Espanso config synced to A_espanso.yml.")
+
+        # Offer to archive old .yml files to avoid duplicate expansions
+        if confirm_action(
+            "Move old espanso match files to match-bak/ to avoid duplication?",
+            default=True,
+        ):
+            bak_count = backup_old_match_files()
+            info(f"Moved {bak_count} files to match-bak/")
 
 
 __all__ = ["app"]

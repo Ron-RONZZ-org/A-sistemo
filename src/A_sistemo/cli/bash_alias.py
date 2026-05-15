@@ -31,8 +31,8 @@ def _show_aliases(aliases: list[BashAlias]) -> None:
         info(tr("neniu_aliasoj"))
         return
     table = Table(box=BOX_SIMPLE, title=tr("bash_aliases"))
-    table.add_column("UID", style="cyan")
-    table.add_column(tr("alias"), style="green")
+    table.add_column("UID", style="bold")
+    table.add_column(tr("alias"))
     table.add_column(tr("function"))
     for a in aliases:
         table.add_row(str(a.uid), a.alias, a.function[:50])

@@ -188,6 +188,31 @@ def migrate_from_existing(target_db: EspansoMatchDB) -> dict:
     if not _ESPANSO_MATCH_DIR.exists():
         return results
 
+
+def backup_old_match_files() -> int:
+    """Move old espanso match files to match-bak/ to avoid duplicate expansions.
+
+    Creates match-bak/ directory if needed. Skips A_espanso.yml.
+    Returns count of files moved.
+    """
+    bak_dir = _ESPANSO_MATCH_DIR / "match-bak"
+    bak_dir.mkdir(parents=True, exist_ok=True)
+    moved = 0
+    for yml_path in sorted(_ESPANSO_MATCH_DIR.glob("*.yml")):
+        if yml_path.name == "A_espanso.yml":
+            continue
+        dest = bak_dir / yml_path.name
+        # Handle name collisions: append a number suffix
+        if dest.exists():
+            stem = yml_path.stem
+            suffix = 1
+            while dest.exists():
+                dest = bak_dir / f"{stem}.{suffix}.yml"
+                suffix += 1
+        yml_path.rename(dest)
+        moved += 1
+    return moved
+
     # Get existing triggers for idempotency
     existing = {m.trigger for m in target_db.list_matches()}
 
@@ -203,7 +228,15 @@ def migrate_from_existing(target_db: EspansoMatchDB) -> dict:
         matches = _parse_espanso_yml(yml_path)
         results["matches_found"] += len(matches)
 
+        seen_in_file: set[str] = set()
         for trigger, replace_text in matches:
+            # Skip duplicates found in the same file
+            if trigger in seen_in_file:
+                results["skipped"] += 1
+                continue
+            seen_in_file.add(trigger)
+
+            # Skip duplicates already in DB
             if trigger in existing:
                 results["skipped"] += 1
                 continue
@@ -275,4 +308,4 @@ def _parse_espanso_yml(path: Path) -> list[tuple[str, str]]:
     return matches
 
 
-__all__ = ["EspansoMatch", "EspansoMatchDB", "migrate_from_existing"]
+__all__ = ["EspansoMatch", "EspansoMatchDB", "migrate_from_existing", "backup_old_match_files"]
