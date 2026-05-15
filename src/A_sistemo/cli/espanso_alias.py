@@ -93,10 +93,21 @@ def forigi(
         error(tr("minimun_unu_uid"))
         raise typer.Exit(1)
     db = _get_db()
+    deleted = 0
+    not_found: list[int] = []
     for uid in uids:
-        db.delete_match(uid)
-    db.sync_espanso_config()
-    info(f"{tr('deleted')}: {len(uids)} matchoj")
+        if db.delete_match(uid):
+            deleted += 1
+        else:
+            not_found.append(uid)
+    if not_found:
+        for uid in not_found:
+            error(f"UID {uid}: {tr('ne_trovita_uid')}")
+    if deleted > 0:
+        db.sync_espanso_config()
+        info(f"{tr('deleted')}: {deleted} matchoj")
+    else:
+        raise typer.Exit(1)
 
 
 @app.command("vidi")

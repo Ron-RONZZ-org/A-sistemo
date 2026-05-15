@@ -126,8 +126,8 @@ class BashAliasDB:
     def delete_alias(self, uid: int) -> bool:
         """Delete an alias by uid."""
         with self._db.transaction() as conn:
-            conn.execute("DELETE FROM aliases WHERE uid = ?", (uid,))
-        return True
+            cursor = conn.execute("DELETE FROM aliases WHERE uid = ?", (uid,))
+            return cursor.rowcount > 0
 
     def search_aliases(self, query: str) -> list[BashAlias]:
         """Search aliases by alias, function, or notes."""

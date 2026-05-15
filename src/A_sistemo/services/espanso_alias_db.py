@@ -130,8 +130,8 @@ class EspansoMatchDB:
     def delete_match(self, uid: int) -> bool:
         """Delete a match by uid."""
         with self._db.transaction() as conn:
-            conn.execute("DELETE FROM matches WHERE uid = ?", (uid,))
-        return True
+            cursor = conn.execute("DELETE FROM matches WHERE uid = ?", (uid,))
+            return cursor.rowcount > 0
 
     def search_matches(self, query: str) -> list[EspansoMatch]:
         """Search matches by trigger, replace_text, or notes."""
