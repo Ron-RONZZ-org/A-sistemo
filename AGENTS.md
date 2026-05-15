@@ -59,6 +59,28 @@ All A-ecosystem development **must** use `uv` as the package manager:
 | Install CLI tools (poetry, etc.) | `uv tool install <tool>` |
 | Add dev dependency | `uv add --dev <pkg>` |
 
+### Editable Install (Development Workflow)
+
+After making changes to source files, the changes are only visible to `A` commands if the module is installed in **editable mode**. If you get "No such command" errors after adding a new command:
+
+1. **Check install mode** - verify the module is editable:
+   ```bash
+   python -c "import A_sistemo; print(A_sistemo.__file__)"
+   # Expected: .../A-sistemo/src/A_sistemo/__init__.py  (source)
+   # NOT:     .../site-packages/A_sistemo/__init__.py    (stale copy)
+   ```
+
+2. **Reinstall as editable** from the workspace root:
+   ```bash
+   cd ~/kodo/autish
+   uv pip install -e ~/kodo/autish/A-sistemo/
+   ```
+
+3. **Verify** the command is registered:
+   ```bash
+   A sistemo --help | grep espanso
+   ```
+
 **Exceptions:**
 - `pip` in README install instructions is acceptable for end users who may not have `uv`
 - Readthedocs platform build may require `pip` (platform constraint)
