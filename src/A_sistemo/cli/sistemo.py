@@ -5,7 +5,7 @@ from __future__ import annotations
 import typer
 
 from A import tr
-from A_sistemo.cli import info, wifi, bluetooth, usb, disko, rubo, bash_alias, particio
+from A_sistemo.cli import info, wifi, bluetooth, usb, disko, rubo, bash_alias, particio, espanso_alias
 
 app = typer.Typer(
     name="sistemo",
@@ -23,6 +23,7 @@ app.add_typer(rubo.app, name="rubo")
 
 # Add sistemo-specific subcommands
 app.add_typer(bash_alias.app, name="selo-aliaso")
+app.add_typer(espanso_alias.app, name="espanso")
 app.add_typer(particio.app, name="particio")
 app.command(name="info")(info.show_info)
 

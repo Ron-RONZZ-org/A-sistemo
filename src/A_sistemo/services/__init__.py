@@ -9,6 +9,7 @@ from A_sistemo.services.usb_service import list_devices as usb_list_devices
 from A_sistemo.services.disk_service import DiskDevice, SMARTInfo, list_devices, get_smart_info, mount, unmount
 from A_sistemo.services.recycle_bin import TrashItem, list_items, move_to_trash, restore, delete_permanent
 from A_sistemo.services.bash_alias_db import BashAlias, BashAliasDB
+from A_sistemo.services.espanso_alias_db import EspansoMatch, EspansoMatchDB
 from A_sistemo.services.partition_service import shrink, create, format
 from A_sistemo.services.installer import get_poetry_env_path, install_binary, generate_shell_aliases, setup_bashrc
 
@@ -46,6 +47,8 @@ __all__ = [
     "delete_permanent",
     "BashAlias",
     "BashAliasDB",
+    "EspansoMatch",
+    "EspansoMatchDB",
     "shrink",
     "create",
     "format",
