@@ -303,16 +303,17 @@ def migrate_bashrc(target_db: BashAliasDB) -> dict:
         if "autish_aliases" in line and "source" in line.lower():
             autish_source_found = True
             continue
-        # Keep existing A source line (don't re-add it)
-        if ".A_bash_alias" in line:
+        # Keep existing A source lines (don't re-add them)
+        if ".A_bash_alias" in line or ".A_bash_functions" in line:
             A_source_found = True
         new_lines.append(line)
     
     # Add A source line if not present
     if not A_source_found:
         new_lines.append("")
-        new_lines.append("# A bash aliases")
+        new_lines.append("# A bash aliases and functions")
         new_lines.append("source ~/.A_bash_alias")
+        new_lines.append("[ -f ~/.A_bash_functions ] && source ~/.A_bash_functions")
         results["added_A"] = True
     
     # Write updated bashrc
