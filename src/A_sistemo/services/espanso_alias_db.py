@@ -137,7 +137,8 @@ class EspansoMatchDB:
         """Search matches by trigger, replace_text, or notes."""
         rows = self._db.execute(
             "SELECT uid, trigger, replace_text, notes, created_at, updated_at FROM matches "
-            "WHERE trigger LIKE ? OR replace_text LIKE ? OR notes LIKE ?",
+            "WHERE trigger LIKE ? OR replace_text LIKE ? OR notes LIKE ? "
+            "ORDER BY trigger",
             (f"%{query}%", f"%{query}%", f"%{query}%"),
         )
         return [self._row_to_match(r) for r in rows]

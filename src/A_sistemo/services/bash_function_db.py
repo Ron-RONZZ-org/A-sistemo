@@ -144,7 +144,8 @@ class BashFunctionDB:
         """Search functions by name or body."""
         rows = self._db.execute(
             "SELECT uid, name, body, created_at, updated_at FROM functions "
-            "WHERE name LIKE ? OR body LIKE ?",
+            "WHERE name LIKE ? OR body LIKE ? "
+            "ORDER BY name",
             (f"%{query}%", f"%{query}%"),
         )
         return [self._row_to_function(r) for r in rows]

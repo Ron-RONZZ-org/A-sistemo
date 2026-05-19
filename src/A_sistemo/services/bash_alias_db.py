@@ -133,7 +133,8 @@ class BashAliasDB:
         """Search aliases by alias, function, or notes."""
         rows = self._db.execute(
             "SELECT uid, alias, function, notes, created_at, updated_at FROM aliases "
-            "WHERE alias LIKE ? OR function LIKE ? OR notes LIKE ?",
+            "WHERE alias LIKE ? OR function LIKE ? OR notes LIKE ? "
+            "ORDER BY alias",
             (f"%{query}%", f"%{query}%", f"%{query}%"),
         )
         return [self._row_to_alias(r) for r in rows]
