@@ -31,6 +31,9 @@ A-sistemo = "A_sistemo.cli:sistemo"
 packages = ["src/A_sistemo"]
 
 # Poetry kept for local path dependency
+[tool.uv.sources]
+a-core = { path = "../A-core", editable = true }
+
 [tool.poetry]
 name = "A-sistemo"
 version = "0.1.0"
