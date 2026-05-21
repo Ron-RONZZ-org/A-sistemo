@@ -88,12 +88,12 @@ def modifi(
     uid: int = typer.Argument(..., help="UID (Example: 1)"),
     file_path: Optional[Path] = typer.Option(
         None,
-        "-f", "--file",
+        "-d", "--dosiero",
         help=tr("path_to_function_file"),
         exists=True,
         readable=True,
     ),
-    name: Optional[str] = typer.Option(None, "-n", "--name", help=tr("new_name")),
+    name: Optional[str] = typer.Option(None, "-n", "--nomo", help=tr("new_name")),
 ) -> None:
     """Modify a bash function."""
     db = _get_db()
