@@ -88,7 +88,7 @@ def modifi(
     uid: int = typer.Argument(..., help="UID (Example: 1)"),
     file_path: Optional[Path] = typer.Option(
         None,
-        "-d", "--dosiero",
+        "-D", "--dosiero",
         help=tr("path_to_function_file"),
         exists=True,
         readable=True,

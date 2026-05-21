@@ -39,6 +39,29 @@ src/A_sistemo/
 6. Docstrings on all public functions
 7. Tests required for all modules
 
+## CLI Option Naming Conventions
+
+All CLI option names (long flags) **must be in Esperanto**:
+
+```python
+# ✅ CORRECT
+def modifi(uid: int, dosiero: Optional[Path] = typer.Option(None, "-D", "--dosiero", ...)):
+```
+
+| Rule | Example | Explanation |
+|------|---------|-------------|
+| Long name in Esperanto | `--dosiero` not `--file` | User-facing names are Esperanto |
+| Python param in English | `file_path:` not `dosiero:` | Source code is English |
+| Short flag avoids conflicts | `-D` not `-d` | `-d` is reserved for `--difino` etc. across A-ecosystem |
+
+### Short Flag Priority
+
+When choosing a short flag for an Esperanto option:
+
+1. **Lowercase first letter** (e.g. `-f` for `--funkcio`) — preferred
+2. **Uppercase** (e.g. `-D` for `--dosiero`) — when the lowercase letter conflicts with a common A-ecosystem convention (`-d/--difino`, `-l/--lingvo`, `-t/--titolo`, etc.)
+3. **`-h` reserved for `--help`** — never use for other options
+
 ## Testing
 
 ```bash
