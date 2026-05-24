@@ -24,6 +24,9 @@ dev = [
 [project.entry-points."A.commands"]
 sistemo = "A_sistemo.cli:app"
 
+[project.entry-points."A.backup"]
+sistemo = "A_sistemo:get_backup_targets"
+
 [project.scripts]
 A-sistemo = "A_sistemo.cli:sistemo"
 

@@ -11,6 +11,7 @@ from rich.table import Table
 from rich.box import SIMPLE as BOX_SIMPLE
 
 from A import info, error, tr
+from A.core.paths import config_dir
 from A_sistemo.services import EspansoMatch, EspansoMatchDB
 
 app = typer.Typer(
@@ -24,7 +25,7 @@ console = Console()
 
 def _get_db() -> EspansoMatchDB:
     """Get the espanso match database."""
-    return EspansoMatchDB(Path.home() / ".config" / "A" / "espanso_matches.db")
+    return EspansoMatchDB(config_dir() / "espanso_matches.db")
 
 
 def _show_matches(matches: list[EspansoMatch]) -> None:

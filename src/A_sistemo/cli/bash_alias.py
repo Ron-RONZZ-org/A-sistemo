@@ -11,6 +11,7 @@ from rich.table import Table
 from rich.box import SIMPLE as BOX_SIMPLE
 
 from A import info, error, tr
+from A.core.paths import config_dir
 from A_sistemo.services import BashAlias, BashAliasDB
 
 app = typer.Typer(
@@ -23,8 +24,7 @@ console = Console()
 
 
 def _get_db() -> BashAliasDB:
-    from pathlib import Path
-    return BashAliasDB(Path.home() / ".config" / "A" / "bash_aliases.db")
+    return BashAliasDB(config_dir() / "bash_aliases.db")
 
 
 def _show_aliases(aliases: list[BashAlias]) -> None:

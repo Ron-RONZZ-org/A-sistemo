@@ -11,6 +11,7 @@ from rich.table import Table
 from rich.box import SIMPLE as BOX_SIMPLE
 
 from A import info, error, tr
+from A.core.paths import config_dir
 from A_sistemo.services import BashFunction, BashFunctionDB
 from A_sistemo.services.bash_function_db import parse_function_file, validate_bash_syntax
 
@@ -25,7 +26,7 @@ console = Console()
 
 def _get_db() -> BashFunctionDB:
     """Get the bash function database."""
-    return BashFunctionDB(Path.home() / ".config" / "A" / "bash_functions.db")
+    return BashFunctionDB(config_dir() / "bash_functions.db")
 
 
 def _show_functions(functions: list[BashFunction]) -> None:
