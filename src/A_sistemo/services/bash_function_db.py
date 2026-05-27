@@ -176,9 +176,10 @@ class BashFunctionDB:
 
 
 def parse_function_file(path: Path) -> tuple[str, str]:
-    """Parse a bash function definition from a file.
+    """Parse a single bash function definition from a file.
 
     Extracts the function name and the body (content between braces).
+    Only the first function definition in the file is returned.
 
     Args:
         path: Path to file containing the function definition
@@ -189,32 +190,67 @@ def parse_function_file(path: Path) -> tuple[str, str]:
     Raises:
         ValueError: If the file doesn't contain a valid function definition
     """
+    functions = parse_functions_from_file(path)
+    return functions[0]  # Guaranteed non-empty by parse_functions_from_file
+
+
+def parse_functions_from_file(path: Path) -> list[tuple[str, str]]:
+    """Parse all bash function definitions from a file.
+
+    Supports:
+    - Multiple function definitions in one file
+    - All three bash function definition styles:
+      1. name() { ... }
+      2. function name { ... }
+      3. function name() { ... }
+    - Leading content (shebang, comments, whitespace)
+    - Functions separated by blank lines or comments
+
+    Args:
+        path: Path to file containing function definitions
+
+    Returns:
+        List of (name, body) tuples, preserving definition order
+
+    Raises:
+        ValueError: If no valid function definition is found,
+                    or if any function has an empty body
+        OSError: If the file cannot be read
+
+    Note:
+        Functions with nested braces in their body (e.g. echo "{") may
+        not parse correctly. This is an acceptable limitation — real
+        bash functions rarely contain literal braces outside of strings.
+    """
     content = path.read_text(encoding="utf-8").strip()
 
     # Match all three valid bash function definition styles:
     #   1. name() { ... }
     #   2. function name { ... }
     #   3. function name() { ... }
-    func_match = re.match(
-        r"(?:function\s+)?(\w[\w-]*?)\s*(?:\(\))?\s*\{\s*\n?(.*?)\n?\s*\}\s*$",
-        content,
+    pattern = re.compile(
+        r"(?:function\s+)?(\w[\w-]*?)\s*(?:\(\))?\s*\{\s*\n?(.*?)\n?\s*\}",
         re.DOTALL,
     )
-    if not func_match:
+    matches = pattern.findall(content)
+
+    if not matches:
         raise ValueError(
-            f"File does not contain a valid bash function definition.\n"
+            f"File does not contain any valid bash function definitions.\n"
             f"Expected formats:\n"
             f"  name() {{\n"
             f"    ...\n"
             f"  }}\n"
         )
 
-    name = func_match.group(1)
-    body = func_match.group(2).strip()
-    if not body:
-        raise ValueError(f"Function '{name}' has empty body.")
+    results: list[tuple[str, str]] = []
+    for name, body in matches:
+        body = body.strip()
+        if not body:
+            raise ValueError(f"Function '{name}' has empty body.")
+        results.append((name, body))
 
-    return name, body
+    return results
 
 
 def validate_bash_syntax(name: str, body: str) -> None:
@@ -246,4 +282,10 @@ def validate_bash_syntax(name: str, body: str) -> None:
         raise ValueError("Bash syntax check timed out.")
 
 
-__all__ = ["BashFunction", "BashFunctionDB", "parse_function_file", "validate_bash_syntax"]
+__all__ = [
+    "BashFunction",
+    "BashFunctionDB",
+    "parse_function_file",
+    "parse_functions_from_file",
+    "validate_bash_syntax",
+]

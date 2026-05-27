@@ -10,10 +10,15 @@ from rich.console import Console
 from rich.table import Table
 from rich.box import SIMPLE as BOX_SIMPLE
 
-from A import info, error, tr
+from A import info, error, tr, tr_multi
 from A.core.paths import config_dir
-from A_sistemo.services import BashFunction, BashFunctionDB
-from A_sistemo.services.bash_function_db import parse_function_file, validate_bash_syntax
+from A_sistemo.services import (
+    BashFunction,
+    BashFunctionDB,
+    parse_function_file,
+    parse_functions_from_file,
+    validate_bash_syntax,
+)
 
 app = typer.Typer(
     name="selo-funkcio",
@@ -22,6 +27,33 @@ app = typer.Typer(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 console = Console()
+
+
+def _resolve_path(path: Path) -> Path | None:
+    """Expand tilde and resolve a path, validating it exists.
+
+    Args:
+        path: Path to resolve (may contain ~)
+
+    Returns:
+        Resolved absolute Path, or None if invalid
+    """
+    resolved = path.expanduser().resolve()
+    if not resolved.exists():
+        error(tr_multi(
+            f"Dosiero ne ekzistas: {resolved}",
+            f"File does not exist: {resolved}",
+            f"Fichier inexistant: {resolved}",
+        ))
+        return None
+    if not resolved.is_file():
+        error(tr_multi(
+            f"Ne estas dosiero: {resolved}",
+            f"Not a file: {resolved}",
+            f"Pas un fichier: {resolved}",
+        ))
+        return None
+    return resolved
 
 
 def _get_db() -> BashFunctionDB:
@@ -60,28 +92,96 @@ def aldoni(
     file_path: Path = typer.Argument(
         ...,
         help=tr("path_to_function_file"),
-        exists=True,
-        readable=True,
+    ),
+    jes: bool = typer.Option(
+        False,
+        "--jes", "-y",
+        help=tr_multi(
+            "Aŭtomate ĝisdatigi duplikatojn sen konfirmo.",
+            "Auto-confirm duplicate updates.",
+            "Mettre à jour automatiquement les doublons.",
+        ),
     ),
 ) -> None:
-    """Add bash function from file."""
+    """Add bash functions from file.
+
+    Supports files with multiple function definitions.
+    If a function name already exists, prompts to update it
+    (use --jes to auto-confirm).
+    """
+    # Problem 1: Expand tilde manually
+    path = _resolve_path(file_path)
+    if path is None:
+        raise typer.Exit(1)
+
+    # Problem 3: Parse multiple functions
     try:
-        name, body = parse_function_file(file_path)
-        validate_bash_syntax(name, body)
+        functions = parse_functions_from_file(path)
     except (ValueError, OSError) as e:
         error(f"{e}")
         raise typer.Exit(1)
 
-    db = _get_db()
-    existing = db.get_function_by_name(name)
-    if existing:
-        error(f"Function '{name}' already exists (UID {existing.uid}).")
-        info("Use 'selo-funkcio modifi' to update it.")
-        raise typer.Exit(1)
+    # Validate ALL functions before inserting (fail-fast)
+    for name, body in functions:
+        try:
+            validate_bash_syntax(name, body)
+        except ValueError as e:
+            error(f"{name}: {e}")
+            raise typer.Exit(1)
 
-    uid = db.add_function(name=name, body=body)
-    db.sync_shell_config()
-    info(f"{tr('added')}: {name} (UID {uid})")
+    db = _get_db()
+    added = 0
+    updated = 0
+
+    for name, body in functions:
+        existing = db.get_function_by_name(name)
+
+        if existing:
+            # Problem 2: Offer to update on duplicate
+            if jes:
+                should_update = True
+            else:
+                answer = typer.prompt(
+                    tr_multi(
+                        f"Funkcio '{name}' jam ekzistas (UID {existing.uid}). "
+                        f"Ĉu ĝisdatigi? (J/n)",
+                        f"Function '{name}' already exists (UID {existing.uid}). "
+                        f"Update? (Y/n)",
+                        f"Fonction '{name}' existe déjà (UID {existing.uid}). "
+                        f"Mettre à jour ? (O/n)",
+                    ),
+                    default="J",
+                )
+                should_update = answer.strip().lower() in {
+                    "j", "jes", "y", "yes", "o", "oui", "",
+                }
+
+            if should_update:
+                db.update_function(existing.uid, body=body)
+                updated += 1
+                info(f"{tr('modified')}: {name} (UID {existing.uid})")
+            else:
+                info(tr_multi(
+                    f"Preterlasita: {name}",
+                    f"Skipped: {name}",
+                    f"Passé: {name}",
+                ))
+        else:
+            uid = db.add_function(name=name, body=body)
+            added += 1
+            info(f"{tr('added')}: {name} (UID {uid})")
+
+    # Sync shell config once after all changes
+    if added > 0 or updated > 0:
+        db.sync_shell_config()
+
+    if added == 0 and updated == 0:
+        info(tr_multi(
+            "Neniu funkcio aldonita.",
+            "No functions added.",
+            "Aucune fonction ajoutée.",
+        ))
+        raise typer.Exit(1)
 
 
 @app.command("modifi")
@@ -91,8 +191,6 @@ def modifi(
         None,
         "-D", "--dosiero",
         help=tr("path_to_function_file"),
-        exists=True,
-        readable=True,
     ),
     name: Optional[str] = typer.Option(None, "-n", "--nomo", help=tr("new_name")),
 ) -> None:
@@ -106,9 +204,12 @@ def modifi(
     new_name = name
     new_body = None
 
-    if file_path:
+    if file_path is not None:
+        resolved = _resolve_path(file_path)
+        if resolved is None:
+            raise typer.Exit(1)
         try:
-            parsed_name, new_body = parse_function_file(file_path)
+            parsed_name, new_body = parse_function_file(resolved)
             if new_name is None:
                 new_name = parsed_name
         except (ValueError, OSError) as e:

@@ -48,6 +48,7 @@ A-sistemo provides system management commands:
 | `particio` | Partition management |
 | `rubo` | Trash management |
 | `selo-aliaso` | Bash alias management |
+| `selo-funkcio` | Bash function management |
 
 ### System Info
 
@@ -108,6 +109,19 @@ A-sistemo provides system management commands:
  A sistemo selo-aliaso aldoni   # Add alias
  A sistemo selo-aliaso forigi    # Remove alias
  ```
+
+### Bash Functions
+
+ ```bash
+ A sistemo selo-funkcio ls          # List functions
+ A sistemo selo-funkcio aldoni FILE # Add functions from file (supports multi-function files)
+ A sistemo selo-funkcio vidi UID    # View function
+ A sistemo selo-funkcio modifi UID  # Update function
+ A sistemo selo-funkcio forigi UID  # Delete function
+ A sistemo selo-funkcio serci Q     # Search functions
+ ```
+
+ Supports auto-update on duplicate (--jes to skip confirmation).
 
 ---
 

@@ -69,6 +69,7 @@ A-sistemo includes multiple subcommands:
 | disko | Disk device listing |
 | rubo | Trash management |
 | selo-aliaso | Bash alias management |
+| selo-funkcio | Bash function management |
 | particio | Partition management |
 
 ## Documentation

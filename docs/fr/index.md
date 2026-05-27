@@ -42,6 +42,7 @@ A-sistemo fournit des commandes de gestion système:
 | `particio` | Gestion des partitions |
 | `rubo` | Gestion de la corbeille |
 | `selo-aliaso` | Gestion des alias Bash |
+| `selo-funkcio` | Gestion des fonctions Bash |
 
 ### Informations Système
 
@@ -92,6 +93,19 @@ A sistemo ruboelton       # Vider la corbeille
 ```bash
 A sistemo selo-aliaso ls        # Liste les alias
 ```
+
+### Fonctions Bash
+
+```bash
+A sistemo selo-funkcio ls          # Liste les fonctions
+A sistemo selo-funkcio aldoni FICHIER # Ajouter des fonctions depuis un fichier
+A sistemo selo-funkcio vidi UID    # Voir une fonction
+A sistemo selo-funkcio modifi UID  # Modifier une fonction
+A sistemo selo-funkcio forigi UID  # Supprimer une fonction
+A sistemo selo-funkcio serci Q     # Rechercher des fonctions
+```
+
+Prend en charge la mise à jour automatique des doublons (--jes pour ignorer la confirmation).
 
 ---
 
