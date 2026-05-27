@@ -175,6 +175,75 @@ class BashFunctionDB:
         pass
 
 
+def _find_matching_brace(content: str, start: int) -> int:
+    """Find the position of the closing brace matching the opening ``{``.
+
+    Iterates character by character through *content* beginning at *start*,
+    tracking brace depth while correctly skipping over:
+    - Single-quoted strings (``'...'``)
+    - Double-quoted strings (``"..."``)
+    - Bash comments (``# ...``)
+
+    This correctly handles ``${parameter}`` expansions, ``$(command)``
+    substitutions, and other constructs containing braces inside
+    quoted strings.
+
+    Args:
+        content: The full file content.
+        start: Position of the first character after the opening ``{``.
+
+    Returns:
+        Position of the matching closing ``}``.
+
+    Raises:
+        ValueError: If no matching closing brace is found before end of content.
+    """
+    depth = 1
+    i = start
+
+    while i < len(content):
+        ch = content[i]
+
+        # Skip single-quoted strings (no escape processing in bash)
+        if ch == "'":
+            i += 1
+            while i < len(content) and content[i] != "'":
+                i += 1
+            i += 1  # Skip closing quote
+            continue
+
+        # Skip double-quoted strings (handle \ escapes)
+        if ch == '"':
+            i += 1
+            while i < len(content):
+                if content[i] == '\\':
+                    i += 1  # Skip escaped character
+                elif content[i] == '"':
+                    break
+                i += 1
+            i += 1  # Skip closing quote
+            continue
+
+        # Skip comments
+        if ch == '#':
+            i += 1
+            while i < len(content) and content[i] != '\n':
+                i += 1
+            continue
+
+        # Track brace depth
+        if ch == '{':
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+            if depth == 0:
+                return i
+
+        i += 1
+
+    raise ValueError("Unterminated function body: no matching closing brace.")
+
+
 def parse_function_file(path: Path) -> tuple[str, str]:
     """Parse a single bash function definition from a file.
 
@@ -206,6 +275,11 @@ def parse_functions_from_file(path: Path) -> list[tuple[str, str]]:
     - Leading content (shebang, comments, whitespace)
     - Functions separated by blank lines or comments
 
+    Uses a brace-aware parser that tracks ``{}`` depth while correctly
+    skipping over quoted strings (``''``, ``\"\"``) and comments (``#``).
+    This ensures that braces inside ``${parameter}`` expansions or string
+    literals do not interfere with the function boundary detection.
+
     Args:
         path: Path to file containing function definitions
 
@@ -218,23 +292,45 @@ def parse_functions_from_file(path: Path) -> list[tuple[str, str]]:
         OSError: If the file cannot be read
 
     Note:
-        Functions with nested braces in their body (e.g. echo "{") may
-        not parse correctly. This is an acceptable limitation — real
-        bash functions rarely contain literal braces outside of strings.
+        Here-documents (``<<EOF``) and nested brace groups outside of
+        quoted strings may cause incorrect function boundary detection.
+        These are uncommon in real bash functions and are an accepted
+        limitation.
     """
     content = path.read_text(encoding="utf-8").strip()
 
-    # Match all three valid bash function definition styles:
-    #   1. name() { ... }
-    #   2. function name { ... }
-    #   3. function name() { ... }
-    pattern = re.compile(
-        r"(?:function\s+)?(\w[\w-]*?)\s*(?:\(\))?\s*\{\s*\n?(.*?)\n?\s*\}",
-        re.DOTALL,
+    # Pattern to find function definition headers
+    header_pattern = re.compile(
+        r"(?:function\s+)?(\w[\w-]*?)\s*(?:\(\))?\s*\{",
     )
-    matches = pattern.findall(content)
 
-    if not matches:
+    results: list[tuple[str, str]] = []
+    pos = 0
+
+    while pos < len(content):
+        match = header_pattern.search(content, pos)
+        if not match:
+            break
+
+        name = match.group(1)
+        brace_pos = match.end() - 1  # Position of the opening {
+
+        try:
+            end_pos = _find_matching_brace(content, brace_pos + 1)
+        except ValueError:
+            # Unterminated function body — stop scanning
+            break
+
+        # Extract body between braces and strip leading/trailing whitespace
+        body = content[brace_pos + 1:end_pos].strip()
+
+        if not body:
+            raise ValueError(f"Function '{name}' has empty body.")
+
+        results.append((name, body))
+        pos = end_pos + 1  # Continue after the closing brace
+
+    if not results:
         raise ValueError(
             f"File does not contain any valid bash function definitions.\n"
             f"Expected formats:\n"
@@ -242,13 +338,6 @@ def parse_functions_from_file(path: Path) -> list[tuple[str, str]]:
             f"    ...\n"
             f"  }}\n"
         )
-
-    results: list[tuple[str, str]] = []
-    for name, body in matches:
-        body = body.strip()
-        if not body:
-            raise ValueError(f"Function '{name}' has empty body.")
-        results.append((name, body))
 
     return results
 

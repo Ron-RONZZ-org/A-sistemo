@@ -254,6 +254,166 @@ def test_search_functions_by_name(temp_db: BashFunctionDB) -> None:
     assert len(results) == 2
 
 
+# ── Parser regression tests (brace-aware) ────────────────────────────────
+
+
+def test_parse_function_with_param_expansion() -> None:
+    """Regression: function body with ${param} expansion must not truncate."""
+    path = _write_func_file(
+        'snar() {\n'
+        '  A semantika nodo aldoni "UUID($1)" "${@:4}"\n'
+        '}\n'
+    )
+    result = parse_functions_from_file(path)
+    assert len(result) == 1
+    assert result[0][0] == "snar"
+    assert result[0][1] == 'A semantika nodo aldoni "UUID($1)" "${@:4}"'
+    path.unlink()
+
+
+def test_parse_function_with_dollar_paren() -> None:
+    """Function body with $() command substitution."""
+    path = _write_func_file(
+        "get_date() {\n"
+        '  echo "$(date +%Y)"\n'
+        "}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert result[0][0] == "get_date"
+    assert result[0][1] == 'echo "$(date +%Y)"'
+    path.unlink()
+
+
+def test_parse_multiple_functions_one_with_dollar_brace() -> None:
+    """Multiple functions where one contains ${} expansion."""
+    path = _write_func_file(
+        "simple() {\n  echo ok\n}\n\n"
+        'complex() {\n'
+        '  A cmd arg1 "${@:2}"\n'
+        "}\n\n"
+        "also_simple() {\n  echo bye\n}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert len(result) == 3
+    assert result[0] == ("simple", "echo ok")
+    assert result[1] == ("complex", 'A cmd arg1 "${@:2}"')
+    assert result[2] == ("also_simple", "echo bye")
+    path.unlink()
+
+
+def test_parse_function_with_nested_brace_block() -> None:
+    """Function with a nested brace block (depth tracking)."""
+    path = _write_func_file(
+        "wrapper() {\n"
+        "  {\n"
+        "    echo nested\n"
+        "  }\n"
+        "}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert result[0][0] == "wrapper"
+    assert result[0][1] == "{\n    echo nested\n  }"
+    path.unlink()
+
+
+def test_parse_function_with_double_quoted_brace_chars() -> None:
+    """Braces inside double-quoted strings must be ignored."""
+    path = _write_func_file(
+        'printer() {\n'
+        '  echo "hello {world}"\n'
+        '  echo "goodbye {cruel} planet"\n'
+        "}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert result[0][0] == "printer"
+    assert result[0][1] == 'echo "hello {world}"\n  echo "goodbye {cruel} planet"'
+    path.unlink()
+
+
+def test_parse_function_with_single_quoted_brace_chars() -> None:
+    """Braces inside single-quoted strings must be ignored."""
+    path = _write_func_file(
+        "printer() {\n"
+        "  echo '{hello}'\n"
+        "}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert result[0][0] == "printer"
+    assert result[0][1] == "echo '{hello}'"
+    path.unlink()
+
+
+def test_parse_function_with_esperanto_chars() -> None:
+    """Esperanto characters in body must not break parsing."""
+    path = _write_func_file(
+        "sxangxi() {\n"
+        "  echo 'ĉagreniĝis'\n"
+        "}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert result[0][0] == "sxangxi"
+    assert result[0][1] == "echo 'ĉagreniĝis'"
+    path.unlink()
+
+
+def test_parse_function_with_comment() -> None:
+    """Comment character inside function body must be handled."""
+    path = _write_func_file(
+        "show_path() {\n"
+        '  echo "$PATH"  # show the path\n'
+        "}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert result[0][0] == "show_path"
+    assert result[0][1] == 'echo "$PATH"  # show the path'
+    path.unlink()
+
+
+def test_parse_mixed_styles_multi_function() -> None:
+    """All three function definition styles in one file."""
+    path = _write_func_file(
+        "a() {\n  echo a\n}\n"
+        "function b {\n  echo b\n}\n"
+        "function c() {\n  echo c\n}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert len(result) == 3
+    assert result[0] == ("a", "echo a")
+    assert result[1] == ("b", "echo b")
+    assert result[2] == ("c", "echo c")
+    path.unlink()
+
+
+def test_parse_real_world_bug_scenario() -> None:
+    """The exact scenario from the issue: 3 functions, middle one has ${}."""
+    path = _write_func_file(
+        "UUID() {\n"
+        "  local uuid=$(echo \"$1\" | sed 'y/ĉĝĥĵŝŭĈĜĤĴŜŬ/cghjsuCGHJSU/'\n"
+        "    | tr '[:lower:]' '[:upper:]' | tr ' -\\\\/.,' '_')\n"
+        '  echo "$uuid"\n'
+        "}\n"
+        "\n"
+        "snar() {\n"
+        '  A semantika nodo aldoni "UUID($1)" -e "eo::$1" -e "en::$2"'
+        ' -e "fr::$3" "${@:4}"\n'
+        "}\n"
+        "\n"
+        'sna() {\n'
+        '  A semantika nodo aldoni "UUID($1)" -e "eo::$2" -e "en::$3"'
+        ' -e "fr::$4"\n'
+        "}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert len(result) == 3
+    assert result[0][0] == "UUID"
+    assert result[1][0] == "snar"
+    assert "${@:4}" in result[1][1], (
+        f"snar body must contain '${{@:4}}', got: {result[1][1]!r}"
+    )
+    assert result[2][0] == "sna"
+    path.unlink()
+
+
 def test_sync_shell_config_creates_file(temp_db: BashFunctionDB) -> None:
     """sync_shell_config generates a valid shell file."""
     temp_db.add_function("greet", "echo hello")
