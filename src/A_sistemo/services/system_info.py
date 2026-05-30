@@ -60,18 +60,13 @@ def collect_system_info() -> SystemInfo:
     try:
         import psutil
     except ImportError:
-        from A import info, error, run
-        import sys
-        info("psutil not found. Auto-installing...")
-        result = run(sys.executable, "-m", "pip", "install", "psutil", timeout=60)
-        if result.returncode == 0:
-            import psutil  # type: ignore[import-untyped]
-        else:
-            error(
-                "Failed to auto-install psutil. "
-                f"Install manually: {sys.executable} -m pip install psutil"
-            )
-            raise SystemExit(1)
+        from A.utils.deps import ensure_dependency
+
+        try:
+            ensure_dependency("psutil", timeout=60)
+        except ImportError:
+            raise SystemExit(1) from None
+        import psutil  # type: ignore[import-untyped]
 
     uname = platform.uname()
     try:
