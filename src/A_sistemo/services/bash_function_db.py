@@ -182,11 +182,16 @@ def _find_matching_brace(content: str, start: int) -> int:
     tracking brace depth while correctly skipping over:
     - Single-quoted strings (``'...'``)
     - Double-quoted strings (``"..."``)
-    - Bash comments (``# ...``)
+
+    Bash comments (``# ...``) are skipped only when the ``#`` appears at
+    the function-body level (``depth == 1``). Inside nested ``${...}``
+    constructs (``depth >= 2``), ``#`` is part of bash variable expansion
+    syntax (e.g. ``${#var}`` length operator, ``${var#pattern}`` removal)
+    and is **not** treated as a comment.
 
     This correctly handles ``${parameter}`` expansions, ``$(command)``
     substitutions, and other constructs containing braces inside
-    quoted strings.
+    quoted strings or nested brace blocks.
 
     Args:
         content: The full file content.
@@ -224,20 +229,25 @@ def _find_matching_brace(content: str, start: int) -> int:
             i += 1  # Skip closing quote
             continue
 
-        # Skip comments
-        if ch == '#':
-            i += 1
-            while i < len(content) and content[i] != '\n':
-                i += 1
-            continue
-
-        # Track brace depth
+        # Track brace depth BEFORE comment check.
+        # This ordering is critical: when inside `${...}` (depth >= 2),
+        # a `#` character is part of bash variable expansion syntax
+        # (e.g. `${#var}` length operator or `${var#pattern}` removal),
+        # NOT a comment. Only at depth == 1 (function body level) does
+        # `#` start a real comment.
         if ch == '{':
             depth += 1
         elif ch == '}':
             depth -= 1
             if depth == 0:
                 return i
+
+        # Skip comments (only at function-body level, not inside ${...})
+        if ch == '#' and depth == 1:
+            i += 1
+            while i < len(content) and content[i] != '\n':
+                i += 1
+            continue
 
         i += 1
 

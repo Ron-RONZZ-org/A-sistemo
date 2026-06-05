@@ -384,6 +384,69 @@ def test_parse_mixed_styles_multi_function() -> None:
     path.unlink()
 
 
+def test_parse_function_with_hash_in_brace_expansion() -> None:
+    """Regression: ${#var} must not be treated as a comment (# after { inside ${...})."""
+    path = _write_func_file(
+        "get_len() {\n"
+        '  local s="${1}"\n'
+        "  echo ${#s}\n"
+        "}\n"
+        "\n"
+        "next_func() {\n"
+        "  echo ok\n"
+        "}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert len(result) == 2
+    assert result[0][0] == "get_len"
+    assert result[0][1] == 'local s="${1}"\n  echo ${#s}'
+    assert result[1] == ("next_func", "echo ok")
+    path.unlink()
+
+
+def test_parse_function_with_hash_pattern_removal() -> None:
+    """Regression: ${var#pattern} must not be treated as a comment."""
+    path = _write_func_file(
+        "strip_prefix() {\n"
+        '  echo "${1#prefix_}"\n'
+        "}\n"
+        "\n"
+        "next_func() {\n"
+        "  echo ok\n"
+        "}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert len(result) == 2
+    assert result[1] == ("next_func", "echo ok")
+    path.unlink()
+
+
+def test_parse_function_with_hash_in_for_loop() -> None:
+    """Regression: for loop with ${#array[@]} must not break brace matching.
+
+    This is the exact pattern from the bug report:
+    ``for ((i = 0; i < ${#words[@]} - 1; i++)); do``
+    """
+    path = _write_func_file(
+        "iterate() {\n"
+        "  local words=($1)\n"
+        "  for ((i = 0; i < ${#words[@]} - 1; i++)); do\n"
+        "    echo ${words[i]}\n"
+        "  done\n"
+        "}\n"
+        "\n"
+        "next_func() {\n"
+        "  echo ok\n"
+        "}\n"
+    )
+    result = parse_functions_from_file(path)
+    assert len(result) == 2
+    assert result[0][0] == "iterate"
+    assert "${#words[@]}" in result[0][1]
+    assert result[1] == ("next_func", "echo ok")
+    path.unlink()
+
+
 def test_parse_real_world_bug_scenario() -> None:
     """The exact scenario from the issue: 3 functions, middle one has ${}."""
     path = _write_func_file(
