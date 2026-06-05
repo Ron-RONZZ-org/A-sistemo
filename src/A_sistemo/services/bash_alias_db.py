@@ -313,8 +313,8 @@ def migrate_bashrc(target_db: BashAliasDB) -> dict:
     if not A_source_found:
         new_lines.append("")
         new_lines.append("# A bash aliases and functions")
-        new_lines.append("source ~/.A_bash_alias")
         new_lines.append("[ -f ~/.A_bash_functions ] && source ~/.A_bash_functions")
+        new_lines.append("source ~/.A_bash_alias")
         results["added_A"] = True
     
     # Write updated bashrc

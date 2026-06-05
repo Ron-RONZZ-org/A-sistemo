@@ -159,6 +159,7 @@ class BashFunctionDB:
             "",
         ]
         for f in functions:
+            lines.append(f"unalias {f.name} 2>/dev/null || true")
             lines.append(f"{f.name}() {{")
             lines.append(f.body)
             lines.append("}")
