@@ -10,9 +10,10 @@ from rich.console import Console
 from rich.table import Table
 from rich.box import SIMPLE as BOX_SIMPLE
 
-from A import info, error, tr
+from A import info, error, tr, tr_multi
 from A.core.paths import config_dir
 from A_sistemo.services import BashAlias, BashAliasDB
+from A_sistemo.services.collision import check_name_in_functions
 
 app = typer.Typer(
     name="bash-aliaso",
@@ -57,8 +58,42 @@ def aldoni(
     alias: str = typer.Option(..., "-a", "--alias", help=f"{tr('alias')} (Example: ll)"),
     funkcio: str = typer.Option(..., "-f", "--funkcio", help=f"{tr('function')} (Example: ls -la)"),
     notes: str = typer.Option("", "-n", "--notes", help=tr("notes")),
+    jes: bool = typer.Option(False, "--jes", "-y",
+        help=tr_multi(
+            "Preterpasi nomkoliziojn sen konfirmo.",
+            "Bypass name collision warnings without prompt.",
+            "Ignorer les collisions de noms sans confirmation.",
+        )),
 ) -> None:
     """Add new bash alias."""
+    # Pre-emptive name collision check against functions
+    existing_func = check_name_in_functions(alias)
+    if existing_func:
+        msg = tr_multi(
+            f"Aliaso '{alias}' kolizias kun funkcio (UID {existing_func.uid}). "
+            f"Aliashoj supersemas funkciojn en interagaj ŝeloj. Daŭrigi?",
+            f"Alias '{alias}' collides with function (UID {existing_func.uid}). "
+            f"Aliases shadow functions in interactive shells. Continue?",
+            f"L'alias '{alias}' entre en collision avec la fonction (UID {existing_func.uid}). "
+            f"Les alias priment sur les fonctions. Continuer ?",
+        )
+        if jes:
+            info(tr_multi(
+                f"Aliaso '{alias}' kolizias — daŭrigas (--jes).",
+                f"Alias '{alias}' collides — continuing (--jes).",
+                f"Alias '{alias}' en collision — continue (--jes).",
+            ))
+        else:
+            answer = typer.prompt(
+                msg,
+                default="N",
+            )
+            if answer.strip().lower() not in {
+                "j", "jes", "y", "yes", "o", "oui",
+            }:
+                error(tr_multi("Nuligita.", "Aborted.", "Annulé."))
+                raise typer.Exit(1)
+
     db = _get_db()
     uid = db.add_alias(alias, funkcio, notes or None)
     db.sync_shell_config()
@@ -71,8 +106,37 @@ def modifi(
     alias: Optional[str] = typer.Option(None, "-a", "--alias", help=f"Nova {tr('alias')}"),
     funkcio: Optional[str] = typer.Option(None, "-f", "--funkcio", help=f"Nova {tr('function')}"),
     notes: Optional[str] = typer.Option(None, "-n", "--notes", help=tr("notes")),
+    jes: bool = typer.Option(False, "--jes", "-y",
+        help=tr_multi(
+            "Preterpasi nomkoliziojn sen konfirmo.",
+            "Bypass name collision warnings without prompt.",
+            "Ignorer les collisions de noms sans confirmation.",
+        )),
 ) -> None:
     """Modify bash alias."""
+    # Pre-emptive collision check only when renaming
+    if alias is not None:
+        existing_func = check_name_in_functions(alias)
+        if existing_func:
+            msg = tr_multi(
+                f"Aliaso '{alias}' kolizias kun funkcio (UID {existing_func.uid}). Daŭrigi?",
+                f"Alias '{alias}' collides with function (UID {existing_func.uid}). Continue?",
+                f"L'alias '{alias}' entre en collision avec la fonction (UID {existing_func.uid}). Continuer ?",
+            )
+            if jes:
+                info(tr_multi(
+                    f"Aliaso '{alias}' kolizias — daŭrigas (--jes).",
+                    f"Alias '{alias}' collides — continuing (--jes).",
+                    f"Alias '{alias}' en collision — continue (--jes).",
+                ))
+            else:
+                answer = typer.prompt(msg, default="N")
+                if answer.strip().lower() not in {
+                    "j", "jes", "y", "yes", "o", "oui",
+                }:
+                    error(tr_multi("Nuligita.", "Aborted.", "Annulé."))
+                    raise typer.Exit(1)
+
     db = _get_db()
     if db.update_alias(uid, alias, funkcio, notes):
         db.sync_shell_config()

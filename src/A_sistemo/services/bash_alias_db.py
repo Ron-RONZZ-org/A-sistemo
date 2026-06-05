@@ -87,6 +87,14 @@ class BashAliasDB:
         )
         return self._row_to_alias(row) if row else None
 
+    def get_alias_by_name(self, name: str) -> Optional[BashAlias]:
+        """Get alias by exact name."""
+        row = self._db.execute_one(
+            "SELECT uid, alias, function, notes, created_at, updated_at FROM aliases WHERE alias = ?",
+            (name,),
+        )
+        return self._row_to_alias(row) if row else None
+
     def list_aliases(self, sort_by: str = "created_at", descending: bool = True) -> list[BashAlias]:
         """List all aliases."""
         # Validate sort_by to prevent injection

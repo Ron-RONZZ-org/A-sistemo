@@ -19,6 +19,7 @@ from A_sistemo.services import (
     parse_functions_from_file,
     validate_bash_syntax,
 )
+from A_sistemo.services.collision import check_name_in_aliases
 
 app = typer.Typer(
     name="selo-funkcio",
@@ -134,6 +135,35 @@ def aldoni(
     updated = 0
 
     for name, body in functions:
+        # Pre-emptive name collision check against aliases
+        existing_alias = check_name_in_aliases(name)
+        if existing_alias:
+            msg = tr_multi(
+                f"Funkcio '{name}' kolizias kun aliaso (UID {existing_alias.uid}). "
+                f"Aliashoj supersemas funkciojn en interagaj ŝeloj. Daŭrigi?",
+                f"Function '{name}' collides with alias (UID {existing_alias.uid}). "
+                f"Aliases shadow functions in interactive shells. Continue?",
+                f"La fonction '{name}' entre en collision avec l'alias (UID {existing_alias.uid}). "
+                f"Les alias priment sur les fonctions. Continuer ?",
+            )
+            if jes:
+                info(tr_multi(
+                    f"Funkcio '{name}' kolizias — daŭrigas (--jes).",
+                    f"Function '{name}' collides — continuing (--jes).",
+                    f"Fonction '{name}' en collision — continue (--jes).",
+                ))
+            else:
+                answer = typer.prompt(msg, default="N")
+                if answer.strip().lower() not in {
+                    "j", "jes", "y", "yes", "o", "oui",
+                }:
+                    error(tr_multi(
+                        f"Preterlasita: {name}",
+                        f"Skipped: {name}",
+                        f"Passé: {name}",
+                    ))
+                    continue
+
         existing = db.get_function_by_name(name)
 
         if existing:
@@ -216,15 +246,34 @@ def modifi(
             error(f"{e}")
             raise typer.Exit(1)
 
+    # Determine effective new name for collision check
+    effective_name = new_name if new_name is not None else func.name
+
     if new_name or new_body:
         try:
             validate_bash_syntax(
-                new_name or func.name,
+                effective_name,
                 new_body or func.body,
             )
         except ValueError as e:
             error(f"{e}")
             raise typer.Exit(1)
+
+    # Pre-emptive collision check when renaming
+    if new_name is not None and new_name != func.name:
+        existing_alias = check_name_in_aliases(new_name)
+        if existing_alias:
+            msg = tr_multi(
+                f"Funkcio '{new_name}' kolizias kun aliaso (UID {existing_alias.uid}). Daŭrigi?",
+                f"Function '{new_name}' collides with alias (UID {existing_alias.uid}). Continue?",
+                f"La fonction '{new_name}' entre en collision avec l'alias (UID {existing_alias.uid}). Continuer ?",
+            )
+            answer = typer.prompt(msg, default="N")
+            if answer.strip().lower() not in {
+                "j", "jes", "y", "yes", "o", "oui",
+            }:
+                error(tr_multi("Nuligita.", "Aborted.", "Annulé."))
+                raise typer.Exit(1)
 
     if db.update_function(uid, name=new_name, body=new_body):
         db.sync_shell_config()
