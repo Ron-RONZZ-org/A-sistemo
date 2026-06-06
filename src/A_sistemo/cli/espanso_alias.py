@@ -10,7 +10,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.box import SIMPLE as BOX_SIMPLE
 
-from A import info, error, tr
+from A import info, error, tr, tr_multi
 from A.core.paths import config_dir
 from A_sistemo.services import EspansoMatch, EspansoMatchDB
 
@@ -42,6 +42,47 @@ def _show_matches(matches: list[EspansoMatch]) -> None:
     console.print(table)
 
 
+def _read_replace_file(path: Path) -> str:
+    """Read replacement text from a file.
+
+    Validates the file exists, is a regular file, and is not binary.
+    Returns the UTF-8 content.
+
+    Args:
+        path: Path to the replacement file (may contain ~)
+
+    Returns:
+        File contents as string
+
+    Raises:
+        typer.Exit: If file is invalid
+    """
+    resolved = path.expanduser().resolve()
+    if not resolved.exists():
+        error(tr_multi(
+            f"Dosiero ne ekzistas: {resolved}",
+            f"File does not exist: {resolved}",
+            f"Fichier inexistant: {resolved}",
+        ))
+        raise typer.Exit(1)
+    if not resolved.is_file():
+        error(tr_multi(
+            f"Ne estas dosiero: {resolved}",
+            f"Not a file: {resolved}",
+            f"Pas un fichier: {resolved}",
+        ))
+        raise typer.Exit(1)
+    content = resolved.read_text(encoding="utf-8")
+    if "\x00" in content:
+        error(tr_multi(
+            f"Binara dosiero ne subtenata: {resolved}",
+            f"Binary file not supported: {resolved}",
+            f"Fichier binaire non pris en charge: {resolved}",
+        ))
+        raise typer.Exit(1)
+    return content
+
+
 @app.command("ls")
 def ls(
     alfabeto: bool = typer.Option(False, "-A", "--alfabeto", help=tr("alfabetaordo")),
@@ -54,15 +95,52 @@ def ls(
     _show_matches(matches)
 
 
+def _resolve_replace_text(inline_text: Optional[str], file_path: Optional[Path]) -> str:
+    """Resolve replace text from either --replace or --replace-dosiero.
+
+    Exactly one must be provided. If both are given, an error is raised.
+
+    Args:
+        inline_text: Value from --replace (may be None)
+        file_path: Value from --replace-dosiero (may be None)
+
+    Returns:
+        The resolved replace text as a string
+
+    Raises:
+        typer.Exit: If neither is provided, or both are provided,
+                    or the file is invalid.
+    """
+    if inline_text is not None and file_path is not None:
+        error(tr_multi(
+            "Ne eblas uzi --replace kaj --replace-dosiero samtempe",
+            "Cannot use both --replace and --replace-dosiero at the same time",
+            "Impossible d'utiliser --replace et --replace-dosiero en même temps",
+        ))
+        raise typer.Exit(1)
+    if file_path is not None:
+        return _read_replace_file(file_path)
+    if inline_text is not None:
+        return inline_text
+    error(tr_multi(
+            "Bezonas --replace aŭ --replace-dosiero",
+            "Requires --replace or --replace-dosiero",
+            "Nécessite --replace ou --replace-dosiero",
+    ))
+    raise typer.Exit(1)
+
+
 @app.command("aldoni")
 def aldoni(
     trigger: str = typer.Option(..., "-t", "--trigger", help=tr("trigger_example")),
-    replace_text: str = typer.Option(..., "-r", "--replace", help=tr("replace_text")),
+    replace_text: Optional[str] = typer.Option(None, "-r", "--replace", help=tr("replace_text")),
+    replace_file: Optional[Path] = typer.Option(None, "-R", "--replace-dosiero", help=tr("replace_dosiero")),
     notes: str = typer.Option("", "-n", "--notes", help=tr("notes")),
 ) -> None:
     """Add new espanso match."""
+    final_replace = _resolve_replace_text(replace_text, replace_file)
     db = _get_db()
-    uid = db.add_match(trigger, replace_text, notes or None)
+    uid = db.add_match(trigger, final_replace, notes or None)
     db.sync_espanso_config()
     info(f"{tr('added')}: UID {uid}")
 
@@ -72,11 +150,18 @@ def modifi(
     uid: int = typer.Argument(..., help="UID (Example: 1)"),
     trigger: Optional[str] = typer.Option(None, "-t", "--trigger", help=tr("trigger")),
     replace_text: Optional[str] = typer.Option(None, "-r", "--replace", help=tr("replace_text")),
+    replace_file: Optional[Path] = typer.Option(None, "-R", "--replace-dosiero", help=tr("replace_dosiero")),
     notes: Optional[str] = typer.Option(None, "-n", "--notes", help=tr("notes")),
 ) -> None:
     """Modify espanso match."""
     db = _get_db()
-    if db.update_match(uid, trigger, replace_text, notes):
+
+    # Resolve replace_text from inline or file (skip if neither given)
+    final_replace: Optional[str] = None
+    if replace_text is not None or replace_file is not None:
+        final_replace = _resolve_replace_text(replace_text, replace_file)
+
+    if db.update_match(uid, trigger, final_replace, notes):
         db.sync_espanso_config()
         info(f"{tr('modified')}: UID {uid}")
     else:
