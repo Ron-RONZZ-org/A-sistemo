@@ -227,3 +227,173 @@ class TestModifiReplaceDosiero:
 
         _, vout = _run("espanso", "vidi", "1")
         assert "updated inline" in vout
+
+
+class TestAldoniDuplicateHandling:
+    """Tests for espanso aldoni duplicate trigger detection and update."""
+
+    def test_get_match_by_trigger_found(self, tmp_path: Path):
+        """get_match_by_trigger returns the match when found."""
+        db = EspansoMatchDB(tmp_path / "espanso_matches.db")
+        uid = db.add_match(":hello", "hello world", notes="greeting")
+        
+        match = db.get_match_by_trigger(":hello")
+        assert match is not None
+        assert match.uid == uid
+        assert match.trigger == ":hello"
+        assert match.replace_text == "hello world"
+        assert match.notes == "greeting"
+
+    def test_get_match_by_trigger_not_found(self, tmp_path: Path):
+        """get_match_by_trigger returns None when trigger not found."""
+        db = EspansoMatchDB(tmp_path / "espanso_matches.db")
+        match = db.get_match_by_trigger(":nonexistent")
+        assert match is None
+
+    def test_aldoni_duplicate_trigger_prompt_update(self):
+        """aldoni prompts user when trigger exists; accepts 'Y' to update."""
+        # Create initial match
+        exit_code, output = _run(
+            "espanso", "aldoni",
+            "-t", ":sig",
+            "-r", "Original Signature",
+        )
+        assert exit_code == 0, f"aldoni failed: {output}"
+        assert "UID" in output
+
+        # Attempt to add same trigger; simulate user pressing 'y'
+        result = runner.invoke(
+            app,
+            ["espanso", "aldoni", "-t", ":sig", "-r", "New Signature"],
+            input="y\n",
+        )
+        assert result.exit_code == 0
+        assert "modified" in result.stdout.lower() or "ĝisdatigi" in result.stdout
+
+        # Verify the update
+        _, vout = _run("espanso", "vidi", "1")
+        assert "New Signature" in vout
+        assert "Original Signature" not in vout
+
+    def test_aldoni_duplicate_trigger_prompt_skip(self):
+        """aldoni prompts user; accepts 'n' to skip."""
+        # Create initial match
+        exit_code, output = _run(
+            "espanso", "aldoni",
+            "-t", ":sig",
+            "-r", "Original Signature",
+        )
+        assert exit_code == 0, f"aldoni failed: {output}"
+
+        # Attempt to add same trigger; simulate user pressing 'n'
+        result = runner.invoke(
+            app,
+            ["espanso", "aldoni", "-t", ":sig", "-r", "New Signature"],
+            input="n\n",
+        )
+        assert result.exit_code == 0
+        assert ("preterlasita" in result.stdout.lower() 
+                or "skipped" in result.stdout.lower()
+                or "passé" in result.stdout.lower())
+
+        # Verify no change
+        _, vout = _run("espanso", "vidi", "1")
+        assert "Original Signature" in vout
+        assert "New Signature" not in vout
+
+    def test_aldoni_duplicate_with_jes_flag_auto_updates(self):
+        """aldoni with --jes flag auto-confirms update without prompting."""
+        # Create initial match
+        exit_code, output = _run(
+            "espanso", "aldoni",
+            "-t", ":sig",
+            "-r", "Original",
+        )
+        assert exit_code == 0, f"aldoni failed: {output}"
+
+        # Add duplicate with --jes flag (no input needed)
+        exit_code, output = _run(
+            "espanso", "aldoni",
+            "-t", ":sig",
+            "-r", "Updated",
+            "--jes",
+        )
+        assert exit_code == 0, f"aldoni with --jes failed: {output}"
+        assert ("modified" in output.lower() or "modifita" in output.lower() or "ĝisdatigi" in output)
+
+        # Verify the update
+        _, vout = _run("espanso", "vidi", "1")
+        assert "Updated" in vout
+        assert "Original" not in vout
+
+    def test_aldoni_duplicate_with_file_replacement(self, tmp_path: Path):
+        """aldoni detects duplicate and updates replacement from file."""
+        # Create initial match
+        content_file = tmp_path / "sig.txt"
+        content_file.write_text("Original Signature\nFrom File")
+        exit_code, output = _run(
+            "espanso", "aldoni",
+            "-t", ":sig",
+            "-R", str(content_file),
+        )
+        assert exit_code == 0, f"aldoni failed: {output}"
+
+        # Update with new file
+        new_file = tmp_path / "sig_new.txt"
+        new_file.write_text("New Signature\nUpdated File")
+        result = runner.invoke(
+            app,
+            ["espanso", "aldoni", "-t", ":sig", "-R", str(new_file)],
+            input="y\n",
+        )
+        assert result.exit_code == 0
+
+        # Verify the update from file
+        _, vout = _run("espanso", "vidi", "1")
+        assert "New Signature" in vout
+        assert "Updated File" in vout
+        assert "Original Signature" not in vout
+
+    def test_aldoni_duplicate_preserves_notes_on_update(self):
+        """aldoni update can change notes when updating duplicate."""
+        # Create initial match with notes
+        exit_code, output = _run(
+            "espanso", "aldoni",
+            "-t", ":sig",
+            "-r", "Signature",
+            "-n", "Original note",
+        )
+        assert exit_code == 0, f"aldoni failed: {output}"
+
+        # Update trigger and notes
+        result = runner.invoke(
+            app,
+            [
+                "espanso", "aldoni",
+                "-t", ":sig",
+                "-r", "Updated Sig",
+                "-n", "Updated note",
+            ],
+            input="y\n",
+        )
+        assert result.exit_code == 0
+
+        # Verify the update
+        _, vout = _run("espanso", "vidi", "1")
+        assert "Updated Sig" in vout
+        assert "Updated note" in vout
+        assert "Original note" not in vout
+
+    def test_aldoni_first_match_no_duplicate(self):
+        """aldoni first match (no existing) works normally."""
+        exit_code, output = _run(
+            "espanso", "aldoni",
+            "-t", ":first",
+            "-r", "First match",
+        )
+        assert exit_code == 0, f"aldoni failed: {output}"
+        assert "added" in output.lower() or "UID" in output
+
+        _, vout = _run("espanso", "vidi", "1")
+        assert "First match" in vout
+

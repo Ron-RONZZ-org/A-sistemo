@@ -88,6 +88,21 @@ class EspansoMatchDB:
         )
         return self._row_to_match(row) if row else None
 
+    def get_match_by_trigger(self, trigger: str) -> Optional[EspansoMatch]:
+        """Get match by trigger string.
+        
+        Args:
+            trigger: The trigger text to search for
+            
+        Returns:
+            EspansoMatch object if found, None otherwise
+        """
+        row = self._db.execute_one(
+            "SELECT uid, trigger, replace_text, notes, created_at, updated_at FROM matches WHERE trigger = ?",
+            (trigger,),
+        )
+        return self._row_to_match(row) if row else None
+
     def list_matches(self, sort_by: str = "created_at", descending: bool = True) -> list[EspansoMatch]:
         """List all matches."""
         valid_sort = {"trigger", "created_at", "updated_at"}

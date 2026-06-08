@@ -136,13 +136,62 @@ def aldoni(
     replace_text: Optional[str] = typer.Option(None, "-r", "--replace", help=tr("replace_text")),
     replace_file: Optional[Path] = typer.Option(None, "-R", "--replace-dosiero", help=tr("replace_dosiero")),
     notes: str = typer.Option("", "-n", "--notes", help=tr("notes")),
+    jes: bool = typer.Option(
+        False,
+        "--jes", "-y",
+        help=tr_multi(
+            "Aŭtomate ĝisdatigi duplikatojn sen konfirmo.",
+            "Auto-confirm duplicate updates.",
+            "Mettre à jour automatiquement les doublons.",
+        ),
+    ),
 ) -> None:
-    """Add new espanso match."""
+    """Add new espanso match.
+    
+    If a match with the same trigger already exists, prompts to update it
+    (use --jes to auto-confirm).
+    """
     final_replace = _resolve_replace_text(replace_text, replace_file)
     db = _get_db()
-    uid = db.add_match(trigger, final_replace, notes or None)
-    db.sync_espanso_config()
-    info(f"{tr('added')}: UID {uid}")
+    
+    # Check for existing match with same trigger
+    existing = db.get_match_by_trigger(trigger)
+    
+    if existing:
+        # Offer to update on duplicate
+        if jes:
+            should_update = True
+        else:
+            answer = typer.prompt(
+                tr_multi(
+                    f"Pokalo '{trigger}' jam ekzistas (UID {existing.uid}). "
+                    f"Ĉu ĝisdatigi? (J/n)",
+                    f"Match '{trigger}' already exists (UID {existing.uid}). "
+                    f"Update? (Y/n)",
+                    f"Correspondance '{trigger}' existe déjà (UID {existing.uid}). "
+                    f"Mettre à jour ? (O/n)",
+                ),
+                default="J",
+            )
+            should_update = answer.strip().lower() in {
+                "j", "jes", "y", "yes", "o", "oui", "",
+            }
+        
+        if should_update:
+            db.update_match(existing.uid, trigger=trigger, replace_text=final_replace, notes=notes or None)
+            db.sync_espanso_config()
+            info(f"{tr('modified')}: UID {existing.uid}")
+        else:
+            info(tr_multi(
+                f"Preterlasita: {trigger}",
+                f"Skipped: {trigger}",
+                f"Passé: {trigger}",
+            ))
+    else:
+        uid = db.add_match(trigger, final_replace, notes or None)
+        db.sync_espanso_config()
+        info(f"{tr('added')}: UID {uid}")
+
 
 
 @app.command("modifi")
