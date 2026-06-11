@@ -6,13 +6,13 @@ Generates a read-only YAML file consumed by espanso.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 from A.data.base import SQLiteDB
+from A_sistemo.services.espanso_yaml import _parse_espanso_yml
 
 
 # Espanso match directory
@@ -158,16 +158,49 @@ class EspansoMatchDB:
         )
         return [self._row_to_match(r) for r in rows]
 
+    @staticmethod
+    def _yaml_replace_value(text: str) -> str:
+        """Format a replacement text as a YAML scalar value.
+
+        Chooses the best YAML scalar style for the content:
+        - Single-line → single-quoted flow scalar (compact, current behaviour)
+        - Multi-line with consistent indentation → literal block scalar (|-)
+        - Multi-line with first line more indented than later lines →
+          double-quoted flow scalar with escape sequences
+
+        Returns the value portion (after ``replace: ``).
+        """
+        if not text:
+            return "''"
+        if "\n" not in text:
+            safe = text.replace("'", "''")
+            return f"'{safe}'"
+
+        # Multi-line: assess indentation safety for block literal
+        content_lines = text.split("\n")
+        non_empty = [l for l in content_lines if l.strip()]
+        if non_empty:
+            first_indent = len(non_empty[0]) - len(non_empty[0].lstrip())
+            min_indent = min(len(l) - len(l.lstrip()) for l in non_empty)
+            if first_indent == min_indent:
+                # Safe: first line has minimum indent → literal block scalar
+                base_indent = max(4, first_indent + 2)
+                bare_lines = [f"{' ' * base_indent}{l}" for l in content_lines]
+                return "|-\n" + "\n".join(bare_lines)
+            # Unsafe: first line is more indented → double-quoted with escapes
+        # Fallback: double-quoted scalar with YAML-compatible escapes
+        import json
+        return json.dumps(text)
+
     def sync_espanso_config(self) -> None:
         """Sync matches to espanso match file (generated, read-only)."""
         matches = self.list_matches()
         lines = ["matches:"]
         for m in matches:
-            # Escape single quotes for YAML single-quoted strings (double them)
             safe_trigger = m.trigger.replace("'", "''")
-            safe_replace = m.replace_text.replace("'", "''")
             lines.append(f"- trigger: '{safe_trigger}'")
-            lines.append(f"  replace: '{safe_replace}'")
+            yaml_val = self._yaml_replace_value(m.replace_text)
+            lines.append(f"  replace: {yaml_val}")
 
         # Ensure espanso match directory exists
         _ESPANSO_MATCH_DIR.mkdir(parents=True, exist_ok=True)
@@ -267,100 +300,6 @@ def backup_old_match_files() -> int:
         yml_path.rename(dest)
         moved += 1
     return moved
-
-    # Get existing triggers for idempotency
-    existing = {m.trigger for m in target_db.list_matches()}
-
-    for yml_path in sorted(_ESPANSO_MATCH_DIR.glob("*.yml")):
-        # Skip our own generated file
-        if yml_path.name == "A_espanso.yml":
-            continue
-
-        results["files_found"] += 1
-
-        # Simple YAML parser for espanso match format.
-        # We parse line-by-line instead of using yaml lib to avoid a dependency.
-        matches = _parse_espanso_yml(yml_path)
-        results["matches_found"] += len(matches)
-
-        seen_in_file: set[str] = set()
-        for trigger, replace_text in matches:
-            # Skip duplicates found in the same file
-            if trigger in seen_in_file:
-                results["skipped"] += 1
-                continue
-            seen_in_file.add(trigger)
-
-            # Skip duplicates already in DB
-            if trigger in existing:
-                results["skipped"] += 1
-                continue
-
-            try:
-                target_db.add_match(trigger=trigger, replace_text=replace_text)
-                results["migrated"] += 1
-                existing.add(trigger)
-            except Exception as e:
-                results["errors"].append(f"{trigger} ({yml_path.name}): {e}")
-
-    return results
-
-
-def _parse_espanso_yml(path: Path) -> list[tuple[str, str]]:
-    """Simple line-based parser for espanso match YAML files.
-
-    Only handles basic format:
-        matches:
-        - trigger: ':xyz'
-          replace: 'text'
-
-    Args:
-        path: Path to YAML file
-
-    Returns:
-        List of (trigger, replace_text) tuples
-    """
-    content = path.read_text()
-    matches: list[tuple[str, str]] = []
-    current_trigger = None
-    current_replace = None
-
-    for line in content.splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
-            continue
-
-        # Detect trigger field
-        trigger_match = re.match(r"^-?\s*trigger:\s*'([^']*)'", stripped)
-        if trigger_match:
-            # Save previous pair if exists
-            if current_trigger is not None and current_replace is not None:
-                matches.append((current_trigger, current_replace))
-            current_trigger = trigger_match.group(1)
-            current_replace = None
-            continue
-
-        # Detect replace field
-        replace_match = re.match(r"^\s*replace:\s*'([^']*)'", stripped)
-        if replace_match and current_trigger is not None:
-            current_replace = replace_match.group(1)
-
-        # Handle unquoted values
-        if current_replace is None:
-            replace_match = re.match(r"^\s*replace:\s*\"([^\"]*)\"", stripped)
-            if replace_match and current_trigger is not None:
-                current_replace = replace_match.group(1)
-
-        if current_replace is None:
-            replace_match = re.match(r"^\s*replace:\s*(\S.*)", stripped)
-            if replace_match and current_trigger is not None:
-                current_replace = replace_match.group(1)
-
-    # Save last pair
-    if current_trigger is not None and current_replace is not None:
-        matches.append((current_trigger, current_replace))
-
-    return matches
 
 
 __all__ = ["EspansoMatch", "EspansoMatchDB", "migrate_from_existing", "backup_old_match_files"]
