@@ -15,8 +15,8 @@ app = typer.Typer(
 )
 
 
-@app.command("ŝrumpi")
-def ŝrumpi(
+@app.command("srumpi")
+def srumpi(
     device: str = typer.Argument(..., help=f"{tr('device')} (Example: /dev/sdb1)"),
     new_size: str = typer.Argument(..., help=f"{tr('size')} (Example: 10G)"),
     justa: bool = typer.Option(False, "-j", "--justa", help=tr("sen_konfirmo")),
