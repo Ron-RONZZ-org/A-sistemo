@@ -132,10 +132,10 @@ def _resolve_replace_text(inline_text: Optional[str], file_path: Optional[Path])
 
 @app.command("aldoni")
 def aldoni(
-    trigger: str = typer.Option(..., "-t", "--trigger", help=tr("trigger_example")),
-    replace_text: Optional[str] = typer.Option(None, "-r", "--replace", help=tr("replace_text")),
+    trigger: str = typer.Option(..., "-t", "--aktivigo", help=tr("trigger_example")),
+    replace_text: Optional[str] = typer.Option(None, "-r", "--anstatauo", help=tr("replace_text")),
     replace_file: Optional[Path] = typer.Option(None, "-R", "--replace-dosiero", help=tr("replace_dosiero")),
-    notes: str = typer.Option("", "-n", "--notes", help=tr("notes")),
+    notes: str = typer.Option("", "-n", "--notoj", help=tr("notes")),
     jes: bool = typer.Option(
         False,
         "--jes", "-y",
@@ -197,10 +197,10 @@ def aldoni(
 @app.command("modifi")
 def modifi(
     uid: int = typer.Argument(..., help="UID (Example: 1)"),
-    trigger: Optional[str] = typer.Option(None, "-t", "--trigger", help=tr("trigger")),
-    replace_text: Optional[str] = typer.Option(None, "-r", "--replace", help=tr("replace_text")),
+    trigger: Optional[str] = typer.Option(None, "-t", "--aktivigo", help=tr("trigger")),
+    replace_text: Optional[str] = typer.Option(None, "-r", "--anstatauo", help=tr("replace_text")),
     replace_file: Optional[Path] = typer.Option(None, "-R", "--replace-dosiero", help=tr("replace_dosiero")),
-    notes: Optional[str] = typer.Option(None, "-n", "--notes", help=tr("notes")),
+    notes: Optional[str] = typer.Option(None, "-n", "--notoj", help=tr("notes")),
 ) -> None:
     """Modify espanso match."""
     db = _get_db()
