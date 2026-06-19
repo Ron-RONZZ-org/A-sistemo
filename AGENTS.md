@@ -41,7 +41,7 @@ src/A_sistemo/
 
 ## CLI Option Naming Conventions
 
-All CLI option names (long flags) **must be in Esperanto**:
+All CLI option names (long flags) **must be in Esperanto**. For the full list of exemptions (proper nouns, technical format names), see the [workspace AGENTS.md](https://github.com/Ron-RONZZ-org/A-workspace/blob/main/AGENTS.md#options-flags):
 
 ```python
 # ✅ CORRECT
