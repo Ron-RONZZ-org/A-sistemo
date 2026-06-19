@@ -6,6 +6,7 @@ Generates a read-only YAML file consumed by espanso.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,7 +17,11 @@ from A_sistemo.services.espanso_yaml import _parse_espanso_yml
 
 
 # Espanso match directory
-_ESPANSO_CONFIG_DIR = Path.home() / ".config" / "espanso"
+# Can be overridden via ESPANSO_CONFIG_DIR env var (for testing)
+_ESPANSO_CONFIG_DIR = Path(
+    os.environ.get("ESPANSO_CONFIG_DIR")
+    or Path.home() / ".config" / "espanso"
+)
 _ESPANSO_MATCH_DIR = _ESPANSO_CONFIG_DIR / "match"
 _A_ESPANSO_FILE = _ESPANSO_MATCH_DIR / "A_espanso.yml"
 _ESPANSO_BAK_DIR = _ESPANSO_CONFIG_DIR / "match-bak"
