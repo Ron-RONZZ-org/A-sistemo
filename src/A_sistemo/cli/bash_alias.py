@@ -55,9 +55,9 @@ def ls(
 
 @app.command("aldoni")
 def aldoni(
-    alias: str = typer.Option(..., "-a", "--alias", help=f"{tr('alias')} (Example: ll)"),
+    alias: str = typer.Option(..., "-a", "--aliaso", help=f"{tr('alias')} (Example: ll)"),
     funkcio: str = typer.Option(..., "-f", "--funkcio", help=f"{tr('function')} (Example: ls -la)"),
-    notes: str = typer.Option("", "-n", "--notes", help=tr("notes")),
+    notes: str = typer.Option("", "-n", "--notoj", help=tr("notes")),
     jes: bool = typer.Option(False, "--jes", "-y",
         help=tr_multi(
             "Preterpasi nomkoliziojn sen konfirmo.",
@@ -103,9 +103,9 @@ def aldoni(
 @app.command("modifi")
 def modifi(
     uid: int = typer.Argument(..., help=f"UID (Example: 1)"),
-    alias: Optional[str] = typer.Option(None, "-a", "--alias", help=f"Nova {tr('alias')}"),
+    alias: Optional[str] = typer.Option(None, "-a", "--aliaso", help=f"Nova {tr('alias')}"),
     funkcio: Optional[str] = typer.Option(None, "-f", "--funkcio", help=f"Nova {tr('function')}"),
-    notes: Optional[str] = typer.Option(None, "-n", "--notes", help=tr("notes")),
+    notes: Optional[str] = typer.Option(None, "-n", "--notoj", help=tr("notes")),
     jes: bool = typer.Option(False, "--jes", "-y",
         help=tr_multi(
             "Preterpasi nomkoliziojn sen konfirmo.",
@@ -296,7 +296,7 @@ def _is_autish_wrapper(path: Path) -> bool:
 
 
 def instali(
-    force: bool = typer.Option(False, "--force", "-f",
+    force: bool = typer.Option(False, "--deviga", "-f",
         help=tr("forcstitui")),
 ) -> None:
     """Install A module commands as direct shell wrappers.
